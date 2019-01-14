@@ -20,7 +20,7 @@ BCDiceがサポートしているシステムであれば利用可能です。
 git clone https://github.com/c-ardinal/Nodens
 cd Nodens
 ```
-1. SystemConfig.jsonにDiscordBotのTokenとID，bcdice-apiのエンドポイントを記入
+2. SystemConfig.jsonにDiscordBotのTokenとID，bcdice-apiのエンドポイントを記入
 ```json
 {
     "discord-token": "Bot Hoge12Hoge34Foo56Bar78Baz90Boo",
@@ -28,8 +28,8 @@ cd Nodens
     "bcdice-endpoint": "http://localhost:9292/v1"
 }
 ```
-2. bcdice-apiを起動
-3. Nodesnをbuild&run
+3. bcdice-apiを起動
+4. Nodesnをbuild&run
 ```sh
 go get -d -v
 go build
