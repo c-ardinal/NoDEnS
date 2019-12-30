@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 // BCDiceVersionResult BCDiceバージョン情報格納構造体
@@ -34,10 +35,13 @@ type BCDiceRollResult struct {
 	Ok     bool   `json:"ok"`
 	Result string `json:"result"`
 	Secret bool   `json:"secret"`
-	Dices  []struct {
-		Faces int `json:"faces"`
-		Value int `json:"value"`
-	} `json:"dices"`
+	Dices  []Dice `json:"dices"`
+}
+
+// Dice ダイス情報格納構造体
+type Dice struct {
+	Faces int `json:"faces"`
+	Value int `json:"value"`
 }
 
 // ExecuteDiceRoll ダイスロール実行
@@ -54,4 +58,13 @@ func ExecuteDiceRoll(endpoint string, system string, dice string) (rr BCDiceRoll
 		return rr, err
 	}
 	return rr, nil
+}
+
+// CalcDicesSum ダイス合計値算出
+func CalcDicesSum(dices []Dice) string {
+	var diceSum int
+	for _, d := range dices {
+		diceSum += d.Value
+	}
+	return strconv.Itoa(diceSum)
 }

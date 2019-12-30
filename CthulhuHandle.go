@@ -55,6 +55,31 @@ func cmdRegistryCharacter(opt []string, cs *cthulhu.CthulhuSession, ch *discordg
 	return returnMes, "", nil
 }
 
+// cmdCharaNumCheck 能力値確認ハンドラ
+func cmdCharaNumCheck(opt []string, cs *cthulhu.CthulhuSession, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+	var chara *cthulhu.Character
+	var exist bool
+	if cs == nil {
+		return "Character not registried.", "", nil
+	}
+	if cthulhu.GetParentIDFromChildID(ch.ID) != "" {
+		chara, exist = (*cs).Npc[mes.Author.ID]
+	} else {
+		chara, exist = (*cs).Pc[mes.Author.ID]
+	}
+	if exist == false {
+		return "Character not found.", "", nil
+	}
+	initNum := cthulhu.GetSkillNum(chara, opt[0], "init")
+	if initNum == "-1" {
+		return "Skill not found.", "", nil
+	}
+	startNum := cthulhu.GetSkillNum(chara, opt[0], "sum")
+	nowNum := cthulhu.GetSkillNum(chara, opt[0], "now")
+
+	return "[" + opt[0] + "] Init( " + initNum + " ), Start( " + startNum + "), Now( " + nowNum + " )", "", nil
+}
+
 // cmdCharaNumControl 能力値操作ハンドラ
 func cmdCharaNumControl(opt []string, cs *cthulhu.CthulhuSession, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
 	var chara *cthulhu.Character
@@ -70,7 +95,7 @@ func cmdCharaNumControl(opt []string, cs *cthulhu.CthulhuSession, ch *discordgo.
 	if exist == false {
 		return "Character not found.", "", nil
 	}
-	oldNum := cthulhu.GetSkillNum(chara, opt[0])
+	oldNum := cthulhu.GetSkillNum(chara, opt[0], "now")
 	if oldNum == "-1" {
 		return "Skill not found.", "", nil
 	}
@@ -96,7 +121,7 @@ func cmdLinkRoll(opt []string, cs *cthulhu.CthulhuSession, ch *discordgo.Channel
 	ignoreRegex := regexp.MustCompile("^[0-9]+$")
 	for _, ex := range exRegex.FindAllString(opt[0], -1) {
 		if ignoreRegex.MatchString(ex) == false {
-			exNum := cthulhu.GetSkillNum(pc, ex)
+			exNum := cthulhu.GetSkillNum(pc, ex, "now")
 			if exNum == "-1" {
 				return "Skill not found.", "", nil
 			}
@@ -121,7 +146,7 @@ func cmdSecretLinkRoll(opt []string, cs *cthulhu.CthulhuSession, ch *discordgo.C
 	ignoreRegex := regexp.MustCompile("^[0-9]+$")
 	for _, ex := range exRegex.FindAllString(opt[0], -1) {
 		if ignoreRegex.MatchString(ex) == false {
-			exNum := cthulhu.GetSkillNum(pc, ex)
+			exNum := cthulhu.GetSkillNum(pc, ex, "now")
 			if exNum == "-1" {
 				return "Skill not found.", "", nil
 			}
@@ -134,4 +159,48 @@ func cmdSecretLinkRoll(opt []string, cs *cthulhu.CthulhuSession, ch *discordgo.C
 		secretMes = "**SECRET DICE**"
 	}
 	return rollResult.Result, secretMes, err
+}
+
+// cmdSanCheckRoll SAN値チェック処理ハンドラ
+func cmdSanCheckRoll(opt []string, cs *cthulhu.CthulhuSession, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+	var sucSub string
+	var failSub string
+	var resultMes string
+
+	if cs == nil {
+		return "PC not registried.", "", nil
+	}
+	pc, exist := (*cs).Pc[mes.Author.ID]
+	if exist == false {
+		return "PC not found.", "", nil
+	}
+	if len(opt) < 2 {
+		return "Invalid arguments.", "", nil
+	}
+
+	orgSanNum := cthulhu.GetSkillNum(pc, "san", "now")
+	sanRollCmd := "SCCB<=" + orgSanNum
+	sanRollResult, err := nodens.ExecuteDiceRoll(nodens.GetConfig().EndPoint, (*cs).Scenario.System, sanRollCmd)
+
+	if strings.Contains(sanRollResult.Result, "成功") {
+		if strings.Contains(opt[0], "d") {
+			sucRollResult, _ := nodens.ExecuteDiceRoll(nodens.GetConfig().EndPoint, (*cs).Scenario.System, opt[0])
+			sucSub = "-" + nodens.CalcDicesSum(sucRollResult.Dices)
+		} else {
+			sucSub = "-" + opt[0]
+		}
+		newNum := cthulhu.AddSkillNum(pc, "san", sucSub)
+		resultMes = "sanc > 成功 > SAN: " + orgSanNum + " -> " + newNum + " ( " + sucSub + " )"
+	} else {
+		if strings.Contains(opt[1], "d") {
+			failRollResult, _ := nodens.ExecuteDiceRoll(nodens.GetConfig().EndPoint, (*cs).Scenario.System, opt[1])
+			failSub = "-" + nodens.CalcDicesSum(failRollResult.Dices)
+		} else {
+			failSub = "-" + opt[1]
+		}
+		newNum := cthulhu.AddSkillNum(pc, "san", failSub)
+		resultMes = "sanc > 失敗 > SAN: " + orgSanNum + " -> " + newNum + " ( " + failSub + " )"
+	}
+
+	return resultMes, "", err
 }

@@ -65,6 +65,7 @@ type Ability struct {
 	Add  int    `json:"add"`
 	Temp int    `json:"temp"`
 	Sum  int    `json:"sum"`
+	Start int   `json:"start"`
 	Now  int    `json:"now"`
 }
 
@@ -79,6 +80,7 @@ type Skill struct {
 	Other   int    `json:"other"`
 	Growflg int    `json:"growflg"`
 	Sum     int    `json:"sum"`
+	Start   int    `json:"start"`
 	Now     int    `json:"now"`
 }
 
@@ -202,15 +204,39 @@ func GetParentIDFromChildID(childID string) string {
 }
 
 // GetSkillNum 能力値取得
-func GetSkillNum(pc *Character, skill string) string {
+func GetSkillNum(pc *Character, skill string, stype string) string {
 	var returnNum = -1
 	ua, exist := pc.Ability[strings.ToUpper(skill)]
 	if exist == true {
-		returnNum = (*ua).Now
+		switch(stype) {
+		case "init":
+			returnNum = (*ua).Init
+			break
+		case "sum":
+			returnNum = (*ua).Sum
+			break;
+		case "now":
+			returnNum = (*ua).Now
+			break
+		default:
+			break
+		}
 	} else {
 		for _, s := range pc.Skill {
 			if strings.Contains((*s).Name+" "+(*s).Sub, skill) == true {
-				returnNum = (*s).Now
+				switch(stype) {
+				case "init":
+					returnNum = (*s).Init
+					break
+				case "sum":
+					returnNum = (*s).Sum
+					break
+				case "now":
+					returnNum = (*s).Now
+					break
+				default:
+					break
+				}
 				break
 			}
 		}

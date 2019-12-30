@@ -50,11 +50,11 @@ func main() {
 	// TODO: あとで実装 nodens.AddCmdHandler("StoreSession", nodens.CmdHandleFunc(cmdStoreSession))	// セッション保存処理
 	// TODO: あとで実装 nodens.AddCmdHandler("LoadSession", nodens.CmdHandleFunc(cmdLoadSession))		// セッション復帰処理
 	nodens.AddCmdHandler("regchara", nodens.CmdHandleFunc(cmdRegistryCharacter)) // キャラシート連携処理
-	// TODO: あとで実装 nodens.AddCmdHandler("check", nodens.CmdHandleFunc(cmdCharaNumCheck))        // 能力値確認処理
+	nodens.AddCmdHandler("check", nodens.CmdHandleFunc(cmdCharaNumCheck))        // 能力値確認処理
 	nodens.AddCmdHandler("ctrl", nodens.CmdHandleFunc(cmdCharaNumControl)) // 能力値操作処理
 	nodens.AddCmdHandler("roll", nodens.CmdHandleFunc(cmdLinkRoll))        // 能力値ダイスロール処理
 	nodens.AddCmdHandler("Sroll", nodens.CmdHandleFunc(cmdSecretLinkRoll)) // 能力値シークレットダイスロール処理
-	// TODO: あとで実装 nodens.AddCmdHandler("sanc", nodens.CmdHandleFunc(cmdSanRoll))				// SAN値チェック処理
+	nodens.AddCmdHandler("sanc", nodens.CmdHandleFunc(cmdSanCheckRoll))				// SAN値チェック処理
 	// TODO: あとで実装 nodens.AddCmdHandler("grow", nodens.CmdHandleFunc(cmdGrowRoll))				// 成長ロール処理
 
 	// セッション開始

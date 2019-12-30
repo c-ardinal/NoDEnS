@@ -16,7 +16,7 @@ func (f CmdHandleFunc) ExecuteCmd(opts []string, cs *cthulhu.CthulhuSession, ch 
 }
 
 // NodensVersion nodensパッケージ&cthulhuパッケージのバージョン情報
-const NodensVersion string = "0.0.1"
+const NodensVersion string = "0.0.２"
 
 // cmdHandleMap コマンドハンドル群登録用マップ
 var cmdHandleMap = map[string]CmdHandleFunc{}
@@ -28,9 +28,11 @@ func AddCmdHandler(cmd string, handler CmdHandleFunc) {
 
 // ExecuteCmdHandler コマンドハンドラ実行処理
 func ExecuteCmdHandler(ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
-	var returnMes string = mes.Content
+	var returnMes string
 	var secretMes string
 	var err error
+
+	returnMes = mes.Content
 
 	commandRegex := regexp.MustCompile("[^ ]+")
 	if commandRegex.MatchString(mes.Content) {
