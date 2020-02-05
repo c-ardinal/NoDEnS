@@ -173,7 +173,7 @@ var CdAbilityNameList = []string{"STR", "CON", "POW", "DEX", "APP", "SIZ", "INT"
 func GetCharSheetFromURL(url string) (*CharaSheet, error) {
 	var cs CharaSheet
 
-	resp, err := http.Get(url + ".js")
+	resp, err := http.Get(url + ".json")
 	if err != nil {
 		return nil, err
 	}
@@ -188,11 +188,11 @@ func GetCharSheetFromURL(url string) (*CharaSheet, error) {
 }
 
 // GetCharDataFromCharSheet キャラデータ生成処理
-func GetCharDataFromCharSheet(cs *CharaSheet, plName string, piID string) *Character {
-	var cd Character
+func GetCharDataFromCharSheet(cs *CharaSheet, plName string, plID string) *CharacterOfCthulhu {
+	var cd CharacterOfCthulhu
 
 	cd.Player.Name = plName
-	cd.Player.ID = piID
+	cd.Player.ID = plID
 
 	cd.Md = (*cs).Phrase
 	cd.ID = strconv.Itoa((*cs).DataID)
