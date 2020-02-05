@@ -1,4 +1,4 @@
-package nodens
+package core
 
 import (
 	"encoding/json"
