@@ -236,7 +236,7 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes 
 	sanRollCmd := "SCCB<=" + orgSanNum
 	sanRollResult, err := core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, sanRollCmd)
 
-	if strings.Contains(sanRollResult.Result, "成功") {
+	if strings.Contains(sanRollResult.Result, "成功") || strings.Contains(sanRollResult.Result, "スペシャル") {
 		if strings.Contains(opt[0], "d") {
 			sucRollResult, _ := core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[0])
 			sucSub = "-" + core.CalcDicesSum(sucRollResult.Dices)
