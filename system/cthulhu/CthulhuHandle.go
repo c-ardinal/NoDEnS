@@ -34,6 +34,9 @@ var DiceResultLogOfCthulhus = []DiceResultLogOfCthulhu{}
 func CmdRegistryCharacter(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
 	var returnMes string
 	var cd *CharacterOfCthulhu
+	if len(opt) == 0 {
+		return "Invalid arguments.", "", nil
+	}
 	if core.CheckExistSession(ch.ID) == true {
 		if core.CheckExistCharacter(ch.ID, mes.Author.ID) == true {
 			return "Character already exists.", "", nil
@@ -79,6 +82,9 @@ func CmdRegistryCharacter(opt []string, cs *core.Session, ch *discordgo.Channel,
 func CmdCharaNumCheck(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
 	var chara *CharacterOfCthulhu
 	var exist bool
+	if len(opt) == 0 {
+		return "Invalid arguments.", "", nil
+	}
 	if cs == nil {
 		return "Character not registried.", "", nil
 	}
@@ -106,6 +112,9 @@ func CmdCharaNumCheck(opt []string, cs *core.Session, ch *discordgo.Channel, mes
 func CmdCharaNumControl(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
 	var chara *CharacterOfCthulhu
 	var exist bool
+	if len(opt) < 2 {
+		return "Invalid arguments.", "", nil
+	}
 	if cs == nil {
 		return "Character not registried.", "", nil
 	}
@@ -134,6 +143,9 @@ func CmdCharaNumControl(opt []string, cs *core.Session, ch *discordgo.Channel, m
 
 // CmdLinkRoll キャラシ連携ダイスロールハンドラ
 func CmdLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+	if len(opt) == 0 {
+		return "Invalid arguments.", "", nil
+	}
 	if cs == nil {
 		return "PC not registried.", "", nil
 	}
@@ -173,6 +185,9 @@ func CmdLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes *dis
 
 // CmdSecretLinkRoll キャラシ連携Secretダイスロールハンドラ
 func CmdSecretLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+	if len(opt) == 0 {
+		return "Invalid arguments.", "", nil
+	}
 	if cs == nil {
 		return "NPC not registried.", "", nil
 	}
@@ -206,15 +221,15 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes 
 	var failSub string
 	var resultMes string
 
+	if len(opt) < 2 {
+		return "Invalid arguments.", "", nil
+	}
 	if cs == nil {
 		return "PC not registried.", "", nil
 	}
 	pc, exist := (*cs).Pc[mes.Author.ID].(*CharacterOfCthulhu)
 	if exist == false {
 		return "PC not found.", "", nil
-	}
-	if len(opt) < 2 {
-		return "Invalid arguments.", "", nil
 	}
 
 	orgSanNum := GetSkillNum(pc, "san", "now")
