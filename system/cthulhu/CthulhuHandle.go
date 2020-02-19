@@ -244,7 +244,7 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes 
 			sucSub = "-" + opt[0]
 		}
 		newNum := AddSkillNum(pc, "san", sucSub)
-		resultMes = "sanc > [ " + sanRollResult.Result + " ] > SAN: " + orgSanNum + " -> " + newNum + " ( " + sucSub + " )"
+		resultMes = "sanc > [ " + sanRollResult.Result + " ] >> SAN: " + orgSanNum + " -> " + newNum + " ( " + sucSub + " )"
 	} else {
 		if strings.Contains(opt[1], "d") {
 			failRollResult, _ := core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[1])
