@@ -165,7 +165,7 @@ func CmdLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes *dis
 			diceCmd = strings.Replace(diceCmd, ex, exNum, -1)
 		}
 	}
-	rollResult, err := core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
+	rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
 
 	if err == nil {
 		const format = "2006/01/02_15:04:05"
@@ -207,7 +207,7 @@ func CmdSecretLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, me
 			diceCmd = strings.Replace(diceCmd, ex, exNum, -1)
 		}
 	}
-	rollResult, err := core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
+	rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
 	var secretMes string
 	if rollResult.Secret == true {
 		secretMes = "**SECRET DICE**"
@@ -234,11 +234,11 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes 
 
 	orgSanNum := GetSkillNum(pc, "san", "now")
 	sanRollCmd := "SCCB<=" + orgSanNum
-	sanRollResult, err := core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, sanRollCmd)
+	sanRollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, sanRollCmd)
 
 	if strings.Contains(sanRollResult.Result, "成功") || strings.Contains(sanRollResult.Result, "スペシャル") {
 		if strings.Contains(opt[0], "d") {
-			sucRollResult, _ := core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[0])
+			sucRollResult, _ := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[0])
 			sucSub = "-" + core.CalcDicesSum(sucRollResult.Dices)
 		} else {
 			sucSub = "-" + opt[0]
@@ -247,7 +247,7 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes 
 		resultMes = "sanc > [ " + sanRollResult.Result + " ] >> SAN: " + orgSanNum + " -> " + newNum + " ( " + sucSub + " )"
 	} else {
 		if strings.Contains(opt[1], "d") {
-			failRollResult, _ := core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[1])
+			failRollResult, _ := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[1])
 			failSub = "-" + core.CalcDicesSum(failRollResult.Dices)
 		} else {
 			failSub = "-" + opt[1]

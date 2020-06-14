@@ -80,8 +80,13 @@ func ExecuteCmdHandler(ch *discordgo.Channel, mes *discordgo.MessageCreate) (str
 		} else {
 			/* セッションが生成されている場合のみダイスロールを実行 */
 			if CheckExistSession(targetID) {
-				rollResult, _ := ExecuteDiceRoll(GetConfig().EndPoint, (*cs).Scenario.System, mes.Content)
-				returnMes, err = rollResult.Result, nil
+				var rollResult BCDiceRollResult
+				rollResult, err = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, mes.Content)
+				if err != nil {
+					returnMes = err.Error()
+				} else {
+					returnMes = rollResult.Result
+				}
 				if rollResult.Secret == true {
 					/* シークレットダイスが振られた旨のメッセージ */
 					secretMes = "**SECRET DICE**"
