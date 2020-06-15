@@ -131,12 +131,32 @@ func CmdCharaNumControl(opt []string, cs *core.Session, ch *discordgo.Channel, m
 		return "Skill not found.", "", nil
 	}
 	diffRegex := regexp.MustCompile("^[+-]?[0-9]+$")
-	if diffRegex.MatchString(opt[1]) == false {
-		return "Invalid diff num.", "", nil
-	}
-	newNum := AddSkillNum(chara, opt[0], opt[1])
+	var diffCmd string = opt[1]
+	if diffRegex.MatchString(diffCmd) == false {
+		minusFlag := false
+		if strings.Contains(diffCmd, "-") {
+			diffCmd = strings.ReplaceAll(diffCmd, "-", "")
+			minusFlag = true
+		}
+		rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diffCmd)
+		if err != nil {
+			return "Invalid diff num.", "", nil
+		}
+		var sum int
+		for _, r := range rollResult.Dices {
+			sum += r.Value
+		}
 
-	returnMes := "[" + opt[0] + "] " + oldNum + " => " + newNum + " (Diff: " + opt[1] + ")"
+		if minusFlag {
+			diffCmd = "-" + strconv.Itoa(sum)
+		} else {
+			diffCmd = strconv.Itoa(sum)
+		}
+
+	}
+	newNum := AddSkillNum(chara, opt[0], diffCmd)
+
+	returnMes := "[" + opt[0] + "] " + oldNum + " => " + newNum + " (Diff: " + diffCmd + ")"
 
 	return returnMes, "", nil
 }

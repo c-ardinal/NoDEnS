@@ -83,7 +83,8 @@ func ExecuteCmdHandler(ch *discordgo.Channel, mes *discordgo.MessageCreate) (str
 				var rollResult BCDiceRollResult
 				rollResult, err = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, mes.Content)
 				if err != nil {
-					returnMes = err.Error()
+					returnMes = "Error: " + err.Error()
+					err = nil
 				} else {
 					returnMes = rollResult.Result
 				}

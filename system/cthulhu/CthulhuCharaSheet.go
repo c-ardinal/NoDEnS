@@ -224,7 +224,7 @@ func GetCharDataFromCharSheet(cs *CharaSheet, plName string, plID string) *Chara
 		{&cs.EduInit, &cs.EduAdd, &cs.EduTemp, &cs.EduNow, &cs.EduNow},
 		{&cs.HpInit, &cs.HpAdd, &cs.HpTemp, &cs.HpNow, &cs.HpNow},
 		{&cs.MpInit, &cs.MpAdd, &cs.MpTemp, &cs.MpNow, &cs.MpNow},
-		{&cs.SanInit, &cs.SanAdd, &cs.SanTemp, &cs.SanNow, &cs.SanLeft},
+		{&cs.SanInit, &cs.SanAdd, &cs.SanTemp, &cs.SanLeft, &cs.SanLeft},
 		{&cs.IdeaInit, &cs.IdeaAdd, &cs.IdeaTemp, &cs.IdeaNow, &cs.IdeaNow},
 		{&cs.LuckyInit, &cs.LuckyAdd, &cs.LuckyTemp, &cs.LuckyNow, &cs.LuckyNow},
 		{&cs.KnowledgeInit, &cs.KnowledgeAdd, &cs.KnowledgeTemp, &cs.KnowledgeNow, &cs.KnowledgeNow},

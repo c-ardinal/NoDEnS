@@ -47,7 +47,7 @@ func CalcStr2Ans(s string, system string) (result string, err error) {
 	tokens := convStr2Tokens(s)
 	isError, errorCol, errorMes, isContCmd := evalTokens(tokens)
 	if isError == true {
-		err = errors.New("SYNTAX_ERROR [ " + string(errorCol) + ", " + errorMes + " ]")
+		err = errors.New("Syntax error [ " + string(errorCol) + ", " + errorMes + " ]")
 	} else {
 		if isContCmd {
 			numOnlyTokens, err = convDiceTokens2NumTokens(tokens, system)
@@ -165,11 +165,11 @@ func evalTokens(tknArray []tokenT) (result bool, errorCol int8, errorMes string,
 	if parenPairNum > 0 {
 		result = true
 		errorCol = int8(len(tknArray))
-		errorMes = "Missing )"
+		errorMes = "Missing ')'"
 	} else if parenPairNum < 0 {
 		result = true
 		errorCol = int8(len(tknArray))
-		errorMes = "Missing ("
+		errorMes = "Missing '('"
 	}
 
 	return result, errorCol, errorMes, isContCmd
@@ -250,7 +250,7 @@ func calFromTokens(tknArray []tokenT) (result string, err error) {
 				stk.Push(end * first)
 			case "/":
 				if first == 0 {
-					err = errors.New("DIVIDE_ZERO")
+					err = errors.New("Divide zero")
 					break
 				} else {
 					stk.Push(end / first)
