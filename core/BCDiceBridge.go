@@ -67,6 +67,9 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 		/* 計算式が含まれていた場合 */
 		var calAnswer string
 		calAnswer, err = CalcStr2Ans(diceCalcStr, system)
+		if err != nil {
+			return rr, err
+		}
 		if len(splitedStrArray) > 1 {
 			var rrtmp BCDiceRollResult
 			strIntegDiceCmd := splitedStrArray[0] + calAnswer
