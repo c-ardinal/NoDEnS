@@ -32,6 +32,41 @@ func ExecuteVersionCheck(endpoint string) (vr BCDiceVersionResult, err error) {
 	return vr, nil
 }
 
+// BCDiceSystemsResult BCDiceシステム一覧取得結果格納構造体
+type BCDiceSystemsResult struct {
+	Systems []string `json:"systems"`
+}
+
+// ExecuteGetSystems BCDiceシステム一覧取得
+func ExecuteGetSystems(endpoint string) (sr BCDiceSystemsResult, err error) {
+	resp, err := http.Get(endpoint + "/systems")
+	log.Printf("\"%s\"", endpoint)
+	if err != nil {
+		log.Println(err)
+		return sr, err
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
+		log.Println(err)
+		return sr, err
+	}
+	return sr, nil
+}
+
+// CheckContainsSystem BCDiceシステム対応有無チェック
+func CheckContainsSystem(endpoint string, system string) (result bool) {
+	systemsList, err := ExecuteGetSystems(endpoint)
+	if err == nil {
+		for _, sys := range systemsList.Systems {
+			if strings.ToLower(sys) == strings.ToLower(system) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // BCDiceRollResult ダイスロール実行結果格納構造体
 type BCDiceRollResult struct {
 	Ok     bool   `json:"ok"`

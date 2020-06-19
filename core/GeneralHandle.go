@@ -25,30 +25,38 @@ func CmdShowVersion(opt []string, cs *Session, ch *discordgo.Channel, mes *disco
 // CmdCreateSession 親セッション生成ハンドラ
 func CmdCreateSession(opt []string, cs *Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
 	var returnMes string
-	/* セッションの存在有無を確認 */
-	if CheckExistSession(ch.ID) == true {
-		opt := string(opt[0])
+
+	option := string(opt[0])
+	if option == "--forced" {
 		sys := string(opt[1])
-		if opt == "--forced" {
-			if sys != "" {
+		isContains := CheckContainsSystem(GetConfig().EndPoint, sys)
+		if sys != "" && isContains == true {
+			if CheckExistSession(ch.ID) == true {
 				/* セッションの強制再生成実行 */
 				RemoveSession(ch.ID)
 				cs = NewSession(ch.ID, sys, mes.Author.Username, mes.Author.ID)
 				returnMes = "Session recreate successfully. (System: " + cs.Scenario.System + ", ID: " + ch.ID + ")"
 			} else {
-				/* システムの指定が無いの場合はセッションの強制再生成しない */
-				returnMes = "Session create failed."
+				/* セッションを生成 */
+				cs = NewSession(ch.ID, sys, mes.Author.Username, mes.Author.ID)
+				returnMes = "Session create successfully. (System: " + cs.Scenario.System + ", ID: " + ch.ID + ")"
 			}
 		} else {
-			/* セッションが生成済みなら生成しない */
-			returnMes = "Session already exists."
+			/* システムの指定が無いの場合はセッションの強制再生成しない */
+			returnMes = "Session create failed."
 		}
 	} else {
 		sys := string(opt[0])
-		if sys != "" {
-			/* セッションを生成 */
-			cs = NewSession(ch.ID, sys, mes.Author.Username, mes.Author.ID)
-			returnMes = "Session create successfully. (System: " + cs.Scenario.System + ", ID: " + ch.ID + ")"
+		isContains := CheckContainsSystem(GetConfig().EndPoint, sys)
+		if sys != "" && isContains == true {
+			if CheckExistSession(ch.ID) == true {
+				/* セッションが生成済みなら生成しない */
+				returnMes = "Session already exists."
+			} else {
+				/* セッションを生成 */
+				cs = NewSession(ch.ID, sys, mes.Author.Username, mes.Author.ID)
+				returnMes = "Session create successfully. (System: " + cs.Scenario.System + ", ID: " + ch.ID + ")"
+			}
 		} else {
 			/* システムの指定が無いの場合はセッションを生成しない */
 			returnMes = "Session create failed."
