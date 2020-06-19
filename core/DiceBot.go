@@ -26,7 +26,7 @@ func (f CmdHandleFunc) ExecuteCmd(opts []string, cs *Session, ch *discordgo.Chan
 }
 
 // NodensVersion nodensパッケージ&cthulhuパッケージのバージョン情報
-const NodensVersion string = "0.0.2"
+const NodensVersion string = "0.0.9"
 
 // cmdHandleMap コマンドハンドル群登録用マップ
 var cmdHandleMap = map[string]map[string]CmdHandleFunc{}
