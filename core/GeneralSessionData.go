@@ -2,8 +2,8 @@ package core
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
-	"time"
 )
 
 // Session セッションデータ構造体
@@ -63,17 +63,31 @@ func RemoveSession(chID string) bool {
 
 // StoreSession セッション保存処理
 func StoreSession(chID string) (*os.File, error) {
-	const format = "20060102150405"
 	outputJSON, _ := json.MarshalIndent(*(trpgSession[chID]), "", "\t")
-	file, err := os.Create("./session_data/" + time.Now().Format(format) + "_" + chID + ".json")
+	os.Mkdir("./session_data/", 0755)
+	file, err := os.Create("./session_data/" + chID + ".json")
 	defer file.Close()
 	file.Write(outputJSON)
 	return file, err
 }
 
-// LoadSession セッション復旧処理
-func LoadSession(file *os.File) {
-	// TODO: そのうち実装
+// RestoreSession セッション復旧処理
+func RestoreSession(chID string) error {
+	rawData, err := ioutil.ReadFile("./session_data/" + chID + ".json")
+	if err != nil {
+		return err
+	}
+
+	if CheckExistSession(chID) == false {
+		var newSession Session
+		trpgSession[chID] = &newSession
+	}
+
+	var ses Session
+	json.Unmarshal(rawData, &ses)
+	trpgSession[chID] = &ses
+
+	return nil
 }
 
 // CheckExistSession セッション存在有無チェック処理

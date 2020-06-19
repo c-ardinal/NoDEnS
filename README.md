@@ -1,5 +1,6 @@
-# Nodens
+# NoDEnS
 
+NoDEnS is Diceroll Enhancement Service
 Discord用のダイスボット
 
 ## 概要
@@ -52,23 +53,25 @@ go build
 
 ## Nodens独自にサポートしている共通コマンド
 
-|コマンド      |引数                  |使用例                          |説明                                                          |
-|:------------:|:--------------------:|:------------------------------:|:-------------------------------------------------------------|
-|ShowVersion   |-                     |`ShowVersion`                   |バージョン情報を表示します                                    |
+|コマンド      |引数                  |使用例                          |説明                                                                       |
+|:------------:|:--------------------:|:------------------------------:|:-----------------------------------------------------------------------:|
+|ShowVersion   |-                     |`ShowVersion`                   |バージョン情報を表示します                                                 |
 |CreateSession |{SYSTEM_NAME}         |`CreateSession Cthulhu`         |左記のコマンドを実行したチャネルでセッションを生成し，ダイスボットを有効化します|
-|CreateSession |--forced {SYSTEM_NAME}|`CreateSession --forced Cthulhu`|一度生成したセッションを破棄し，再生成します                  |
-|ConnectSession|{PARENT_CHANNEL_ID}   |`ConnectSession 1234567890`     |CreateSessionで生成したセッションに接続します                 |
+|CreateSession |--forced {SYSTEM_NAME}|`CreateSession --forced Cthulhu`|一度生成したセッションを破棄し，再生成します                                 |
+|ConnectSession|{PARENT_CHANNEL_ID}   |`ConnectSession 1234567890`     |CreateSessionで生成したセッションに接続します                               |
+|StoreSession  |                      |`StoreSession`                  |CreateSessionで生成したセッションをサーバ上に保存します                      |
+|Load{SYSTEM_NAME}Session|            |`LoadCthulhuSession`            |StoreSessionで保存したセッションを復元します                                |
 
 ## Nodens独自にサポートしているCoC用コマンド
 
-|コマンド      |引数                  |使用例                          |説明                                                          |
-|:------------:|:--------------------:|:------------------------------:|:-------------------------------------------------------------|
-|regchara      |{CHARASHEET_URL}      |`regchara https://charasheet.vampire-blood.net/123456789abcdef`|キャラシートの情報を取得します |
-|check         |{ABILITY_SKILL_NAME}  |`check 聞き耳`                  |能力値もしくは技能値の初期値・開始値・現在値を確認出来ます|
-|ctrl          |{ABILITY_SKILL_NAME} {VAR_NUM} |`ctrl SAN -1`          |能力値もしくは技能値を加算/減算します                         |
-|roll          |{ABILITY_SKILL_NAME}  |`roll 聞き耳`                   |S=5, F=95で1d100を振ります                                    |
-|Sroll         |{ABILITY_SKILL_NAME}  |`Sroll 聞き耳`                  |S=5, F=95で1d100のシークレットダイスを振ります                |
-|sanc          |{SUCCESS} {FAIL}      |`sanc 1 1d2`                    |SAN値チェックロールおよびSAN値の加算/減算処理を実施します|
+|コマンド      |引数                  |使用例                          |説明                                                          |演算機能の可否|演算機能の使用例|
+|:------------:|:--------------------:|:------------------------------:|:----------------------------------------------------------:|:-----------:|:----------------:|
+|regchara      |{CHARASHEET_URL}      |`regchara https://charasheet.vampire-blood.net/123456789abcdef`|キャラシートの情報を取得します  |☓           |-                 |
+|check         |{ABILITY_SKILL_NAME}  |`check 聞き耳`                  |能力値もしくは技能値の初期値・開始値・現在値を確認出来ます        |☓           |-                 |
+|ctrl          |{ABILITY_SKILL_NAME} {VAR_NUM} |`ctrl SAN -1`          |能力値もしくは技能値を加算/減算します                           |○           |`ctrl HP -(1d2+1)`|
+|roll          |{ABILITY_SKILL_NAME}  |`roll 聞き耳`                   |S=5, F=95で1d100を振ります                                    |○            |`roll DEX*5`      |
+|Sroll         |{ABILITY_SKILL_NAME}  |`Sroll 聞き耳`                  |S=5, F=95で1d100のシークレットダイスを振ります                  |○            |`Sroll 聞き耳+20` |
+|sanc          |{SUCCESS} {FAIL}      |`sanc 1 1d2`                    |SAN値チェックロールおよびSAN値の加算/減算処理を実施します        |○            |`sanc 1 1d2+1`    |
 
 ## 各システム共通コマンドの使い方
 

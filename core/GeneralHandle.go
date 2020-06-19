@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -76,3 +78,25 @@ func CmdConnectSession(opt []string, cs *Session, ch *discordgo.Channel, mes *di
 	}
 	return returnMes, "", nil
 }
+
+// CmdStoreSession セッション保存ハンドラ
+func CmdStoreSession(opt []string, cs *Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+	var returnMes string
+
+	if CheckExistSession(ch.ID) == true {
+		_, err := StoreSession(ch.ID)
+		if err != nil {
+			fmt.Println(err)
+			returnMes = "Session store failed."
+		} else {
+			returnMes = "Session store successfully."
+		}
+	} else {
+		returnMes = "Session not created."
+	}
+
+	return returnMes, "", nil
+}
+
+// CmdLoadSession セッション復帰ハンドラ
+//coreパッケージからPC・NPC情報の構造復元が出来ないため，システム側で実装する
