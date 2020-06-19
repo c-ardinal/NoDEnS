@@ -31,16 +31,16 @@ var handleFuncTable = []handleFuncStruct{
 	{"General", "ConnectSession", core.CmdConnectSession}, // 親セッション連携処理
 	// TODO: あとで実装 {"General", "ExitSession", core.cmdExitSession},		// 親セッション連携処理
 	// TODO: あとで実装 {"General", "RemoveSession", core.cmdRemoveSession},	// セッション削除処理
-	// TODO: あとで実装 {"General", "StoreSession", core.cmdStoreSession},	// セッション保存処理
-	// TODO: あとで実装 {"General", "LoadSession", core.cmdLoadSession},		// セッション復帰処理
-	{"Cthulhu", "regchara", cthulhu.CmdRegistryCharacter}, // キャラシート連携処理
-	{"Cthulhu", "check", cthulhu.CmdCharaNumCheck},        // 能力値確認処理
-	{"Cthulhu", "ctrl", cthulhu.CmdCharaNumControl},       // 能力値操作処理
-	{"Cthulhu", "roll", cthulhu.CmdLinkRoll},              // 能力値ダイスロール処理
-	{"Cthulhu", "Sroll", cthulhu.CmdSecretLinkRoll},       // 能力値シークレットダイスロール処理
-	{"Cthulhu", "sanc", cthulhu.CmdSanCheckRoll},          // SAN値チェック処理
+	{"General", "StoreSession", core.CmdStoreSession},                        // セッション保存処理
+	{"General", "RestoreCthulhuSession", cthulhu.CmdRestoreSessionOfCthulhu}, // セッション復帰処理
+	{"Cthulhu", "regchara", cthulhu.CmdRegistryCharacter},                    // キャラシート連携処理
+	{"Cthulhu", "check", cthulhu.CmdCharaNumCheck},                           // 能力値確認処理
+	{"Cthulhu", "ctrl", cthulhu.CmdCharaNumControl},                          // 能力値操作処理
+	{"Cthulhu", "roll", cthulhu.CmdLinkRoll},                                 // 能力値ダイスロール処理
+	{"Cthulhu", "Sroll", cthulhu.CmdSecretLinkRoll},                          // 能力値シークレットダイスロール処理
+	{"Cthulhu", "sanc", cthulhu.CmdSanCheckRoll},                             // SAN値チェック処理
 	// TODO: あとで実装 {"Cthulhu", "grow", cmdGrowRoll},    // 成長ロール処理
-	// TODO: 調整中 {"Cthulhu", "showstat", cthulhu.CmdShowStatistics}, // ダイスロール統計表示処理
+	{"Cthulhu", "showstat", cthulhu.CmdShowStatistics}, // ダイスロール統計表示処理
 }
 
 // main メイン関数

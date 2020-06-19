@@ -1,6 +1,8 @@
 package cthulhu
 
 import (
+	"encoding/json"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -29,6 +31,43 @@ type DiceStatsticsOfCthulhu struct {
 
 // DiceResultLogOfCthulhus ダイスロール実行ログ格納変数
 var DiceResultLogOfCthulhus = []DiceResultLogOfCthulhu{}
+
+// CmdRestoreSessionOfCthulhu クトゥルフのセッションを復元する
+func CmdRestoreSessionOfCthulhu(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+	var returnMes string
+
+	err := core.RestoreSession(ch.ID)
+	if err != nil {
+		fmt.Println(err)
+		returnMes = "Session load failed."
+	} else {
+		ses := core.GetSessionByID(ch.ID)
+
+		// PC情報を一度JSONに戻してからクトゥルフ用PC構造体に変換する
+		pcsRawData, _ := json.Marshal((*ses).Pc)
+		var pcsMap = map[string]*CharacterOfCthulhu{}
+		json.Unmarshal(pcsRawData, &pcsMap)
+
+		// NPC情報を一度JSONに戻してからクトゥルフ用NPC構造体に変換する
+		npcsRawData, _ := json.Marshal((*ses).Npc)
+		var npcsMap = map[string]*CharacterOfCthulhu{}
+		json.Unmarshal(npcsRawData, &npcsMap)
+
+		// PC情報を格納
+		for _, pcData := range pcsMap {
+			(*ses).Pc[pcData.Player.ID] = pcData
+		}
+
+		// NPC情報を格納
+		for _, npcData := range npcsMap {
+			(*ses).Npc[npcData.Player.ID] = npcData
+		}
+
+		returnMes = "Session store successfully."
+	}
+
+	return returnMes, "", nil
+}
 
 // CmdRegistryCharacter キャラシ連携ハンドラ
 func CmdRegistryCharacter(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
@@ -297,13 +336,9 @@ func CmdShowStatistics(opt []string, cs *core.Session, ch *discordgo.Channel, me
 			drs.Player.Name = drl.Player.Name
 		}
 		if strings.Contains(drl.Result, "決定的成功") {
-			drs.Critical = append(drs.Critical, "["+drl.Time+"] "+drl.Command+" ➡ "+drl.Result)
+			drs.Critical = append(drs.Critical, drl.Command)
 		} else if strings.Contains(drl.Result, "致命的失敗") {
-			drs.Fumble = append(drs.Fumble, "["+drl.Time+"] "+drl.Command+" ➡ "+drl.Result)
-		} else if strings.Contains(drl.Result, "成功") {
-			drs.Success = append(drs.Success, "["+drl.Time+"] "+drl.Command+" ➡ "+drl.Result)
-		} else if strings.Contains(drl.Result, "失敗") {
-			drs.Fail = append(drs.Fail, "["+drl.Time+"] "+drl.Command+" ➡ "+drl.Result)
+			drs.Fumble = append(drs.Fumble, drl.Command)
 		} else {
 
 		}
@@ -324,13 +359,9 @@ func CmdShowStatistics(opt []string, cs *core.Session, ch *discordgo.Channel, me
 			drs.Player.Name = drl.Player.Name
 		}
 		if strings.Contains(drl.Result, "決定的成功") {
-			drs.Critical = append(drs.Critical, "["+drl.Time+"] "+drl.Command+" ➡ "+drl.Result)
+			drs.Critical = append(drs.Critical, drl.Command)
 		} else if strings.Contains(drl.Result, "致命的失敗") {
-			drs.Fumble = append(drs.Fumble, "["+drl.Time+"] "+drl.Command+" ➡ "+drl.Result)
-		} else if strings.Contains(drl.Result, "成功") {
-			drs.Success = append(drs.Success, "["+drl.Time+"] "+drl.Command+" ➡ "+drl.Result)
-		} else if strings.Contains(drl.Result, "失敗") {
-			drs.Fail = append(drs.Fail, "["+drl.Time+"] "+drl.Command+" ➡ "+drl.Result)
+			drs.Fumble = append(drs.Fumble, drl.Command)
 		} else {
 
 		}
@@ -344,21 +375,15 @@ func CmdShowStatistics(opt []string, cs *core.Session, ch *discordgo.Channel, me
 		returnMes = "\r\n===================="
 		for _, drs := range diceResultStatstics {
 			returnMes += "\r\n【" + drs.Player.Name + "】\r\n"
-			returnMes += "    ●決定的成功：\r\n"
-			for _, critical := range drs.Critical {
-				returnMes += "      ・" + critical + "\r\n"
+			if len(drs.Critical) > 0 {
+				returnMes += "●決定的成功：\r\n"
+				returnMes += strings.Join(drs.Critical, ", ")
+				returnMes += "\r\n"
 			}
-			returnMes += "    ●成功：\r\n"
-			for _, success := range drs.Success {
-				returnMes += "      ・" + success + "\r\n"
-			}
-			returnMes += "    ●失敗：\r\n"
-			for _, fail := range drs.Fail {
-				returnMes += "      ・" + fail + "\r\n"
-			}
-			returnMes += "    ●致命的失敗：\r\n"
-			for _, fumble := range drs.Fumble {
-				returnMes += "      ・" + fumble + "\r\n"
+			if len(drs.Fumble) > 0 {
+				returnMes += "●致命的失敗：\r\n"
+				returnMes += strings.Join(drs.Fumble, ", ")
+				returnMes += "\r\n"
 			}
 		}
 		returnMes += "====================\r\n"
