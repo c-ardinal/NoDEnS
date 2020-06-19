@@ -12,7 +12,7 @@ import (
 )
 
 // mainVersion mainパッケージバージョン
-const mainVersion string = "0.0.1"
+const mainVersion string = "0.0.2"
 
 // configFile デフォルト設定ファイルパス
 var configFile = "SystemConfig.json"
