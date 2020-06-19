@@ -59,8 +59,8 @@ go build
 |CreateSession |{SYSTEM_NAME}         |`CreateSession Cthulhu`         |左記のコマンドを実行したチャネルでセッションを生成し，ダイスボットを有効化します|
 |CreateSession |--forced {SYSTEM_NAME}|`CreateSession --forced Cthulhu`|一度生成したセッションを破棄し，再生成します                                 |
 |ConnectSession|{PARENT_CHANNEL_ID}   |`ConnectSession 1234567890`     |CreateSessionで生成したセッションに接続します                               |
-|StoreSession  |                      |`StoreSession`                  |CreateSessionで生成したセッションをサーバ上に保存します                      |
-|Load{SYSTEM_NAME}Session|            |`LoadCthulhuSession`            |StoreSessionで保存したセッションを復元します                                |
+|StoreSession  |-                     |`StoreSession`                  |CreateSessionで生成したセッションをサーバ上に保存します                      |
+|Load{SYSTEM_NAME}Session|-           |`LoadCthulhuSession`            |StoreSessionで保存したセッションを復元します                                |
 
 ## Nodens独自にサポートしているCoC用コマンド
 
