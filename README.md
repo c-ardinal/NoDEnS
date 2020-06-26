@@ -1,6 +1,7 @@
 # NoDEnS
 
 NoDEnS is Diceroll Enhancement Service
+
 Discord用のダイスボット
 
 ## 概要
@@ -13,7 +14,7 @@ BCDiceがサポートしているシステムであれば利用可能です。
 
 ## 実行に必要なもの
 
-- Go (v1.9.2)
+- Go (v1.13.4)
 - Ruby (v2.3.7)
 - [ysakasin/bcdice-api](https://github.com/ysakasin/bcdice-api/tree/0.6.0) (v0.6.0)
 - [DiscordBotのTokenとID](https://qiita.com/oosawa/items/e5b01e88a209d9087432)
