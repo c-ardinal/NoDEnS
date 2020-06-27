@@ -123,7 +123,7 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 
 	} else {
 		/* 計算式が含まれていなかった場合 */
-		rr, err = ExecuteDiceRoll(endpoint, system, dice)
+		rr, _ = ExecuteDiceRoll(endpoint, system, dice)
 	}
 
 	return rr, err
