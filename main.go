@@ -88,25 +88,29 @@ func main() {
 // onMessageCreate メッセージ受信時処理
 func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
 	channel, err := session.State.Channel(message.ChannelID)
-	authorID := message.Author.ID
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	log.Printf("%20s %20s > %s\n", message.ChannelID, message.Author.Username, message.Content)
+	var md core.MessageData
+	md.ChannelID = channel.ID
+	md.AuthorID = message.Author.ID
+	md.AuthorName = message.Author.Username
+	md.MessageString = message.Content
 
-	if authorID != core.GetConfig().BotID {
-		exeResult, secResult, err := core.ExecuteCmdHandler(channel, message)
-		if err != nil {
+	log.Printf("%20s %20s > %s\n", md.ChannelID, md.AuthorName, md.MessageString)
+
+	if md.AuthorID != core.GetConfig().BotID {
+		handlerResult := core.ExecuteCmdHandler(md)
+		if handlerResult.Error != nil {
 			log.Println(err)
-			return
 		}
-		if exeResult != "" && exeResult != message.Content {
-			sendReplyMessage(session, channel.ID, authorID, exeResult)
+		if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
+			sendReplyMessage(session, md.ChannelID, md.AuthorID, handlerResult.Normal.Content)
 
-			if secResult != "" {
-				sendReplyMessage(session, core.GetParentIDFromChildID(channel.ID), authorID, secResult)
+			if handlerResult.Secret.Content != "" {
+				sendReplyMessage(session, core.GetParentIDFromChildID(md.ChannelID), md.AuthorID, handlerResult.Secret.Content)
 			}
 		}
 	}

@@ -17,12 +17,41 @@ type DiceResultLog struct {
 // diceResultLogs ダイスロール実行ログ格納変数
 var diceResultLogs = []DiceResultLog{}
 
+// MessageData ハンドラに渡すメッセージのデータ
+type MessageData struct {
+	ChannelID     string
+	AuthorID      string
+	AuthorName    string
+	MessageString string
+}
+
+// HandlerResult ハンドラの戻りオブジェクト
+type HandlerResult struct {
+	Normal MessageTemplate
+	Secret MessageTemplate
+	Error  error
+}
+
+// MessageTemplate ユーザに返すメッセージの共通型
+type MessageTemplate struct {
+	EnableType int
+	Content    string
+	Embed      discordgo.MessageEmbed
+}
+
+const (
+	//EnContent 文字によるメッセージ返却を行う(デフォルト)
+	EnContent int = 0
+	//EnEmbed Embedによるメッセージ返却を行う
+	EnEmbed int = 1
+)
+
 // CmdHandleFunc コマンドハンドラ型
-type CmdHandleFunc func(opts []string, cs *Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error)
+type CmdHandleFunc func(opts []string, cs *Session, md MessageData) (handlerResult HandlerResult)
 
 // ExecuteCmd CmdHandleFunc実行処理
-func (f CmdHandleFunc) ExecuteCmd(opts []string, cs *Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
-	return f(opts, cs, ch, mes)
+func (f CmdHandleFunc) ExecuteCmd(opts []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
+	return f(opts, cs, md)
 }
 
 // NodensVersion nodensパッケージ&cthulhuパッケージのバージョン情報
@@ -40,27 +69,23 @@ func AddCmdHandler(system string, cmd string, handler CmdHandleFunc) {
 }
 
 // ExecuteCmdHandler コマンドハンドラ実行処理
-func ExecuteCmdHandler(ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
-	var returnMes string
-	var secretMes string
-	var err error
-
-	returnMes = mes.Content
+func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
+	handlerResult.Normal.Content = md.MessageString
 
 	commandRegex := regexp.MustCompile("[^ ]+")
-	if commandRegex.MatchString(mes.Content) {
+	if commandRegex.MatchString(md.MessageString) {
 		var targetID string
 		/* DiscordのチャネルIDからセッション情報を取得 */
-		if GetParentIDFromChildID(ch.ID) != "" {
-			targetID = GetParentIDFromChildID(ch.ID)
+		if GetParentIDFromChildID(md.ChannelID) != "" {
+			targetID = GetParentIDFromChildID(md.ChannelID)
 		} else {
-			targetID = ch.ID
+			targetID = md.ChannelID
 		}
 		cs := GetSessionByID(targetID)
 
 		/* コマンド部と引数部を分解 */
-		cmd := commandRegex.FindAllString(mes.Content, -1)[0]
-		opts := commandRegex.FindAllString(mes.Content, -1)[1:]
+		cmd := commandRegex.FindAllString(md.MessageString, -1)[0]
+		opts := commandRegex.FindAllString(md.MessageString, -1)[1:]
 
 		/* コマンド部をもとにコール対象の関数ポインタを取得 */
 		var fs CmdHandleFunc
@@ -73,42 +98,41 @@ func ExecuteCmdHandler(ch *discordgo.Channel, mes *discordgo.MessageCreate) (str
 
 		if isGenExist == true {
 			/* 共通コマンドコール処理 */
-			returnMes, secretMes, err = fg.ExecuteCmd(opts, cs, ch, mes)
+			handlerResult = fg.ExecuteCmd(opts, cs, md)
 		} else if isSysExist == true {
 			/* 各システム用コマンドコール処理 */
-			returnMes, secretMes, err = fs.ExecuteCmd(opts, cs, ch, mes)
+			handlerResult = fs.ExecuteCmd(opts, cs, md)
 		} else {
 			/* セッションが生成されている場合のみダイスロールを実行 */
 			if CheckExistSession(targetID) {
 				var rollResult BCDiceRollResult
-				rollResult, err = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, mes.Content)
-				if err != nil {
-					returnMes = "Error: " + err.Error()
-					err = nil
+				rollResult, handlerResult.Error = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, md.MessageString)
+				if handlerResult.Error != nil {
+					handlerResult.Normal.Content = "Error: " + handlerResult.Error.Error()
 				} else {
-					returnMes = rollResult.Result
+					handlerResult.Normal.Content = rollResult.Result
 				}
 				if rollResult.Secret == true {
 					/* シークレットダイスが振られた旨のメッセージ */
-					secretMes = "**SECRET DICE**"
+					handlerResult.Secret.Content = "**SECRET DICE**"
 				} else {
 					/* シークレットダイス以外の実行結果を記録 */
-					const format = "2006/01/02_15:04:05"
-					parsedTime, _ := mes.Timestamp.Parse()
+					//const format = "2006/01/02_15:04:05"
+					//parsedTime, _ := mes.Timestamp.Parse()
 					var diceResultLog DiceResultLog
 
-					diceResultLog.Player.ID = mes.Author.ID
-					diceResultLog.Player.Name = mes.Author.Username
-					diceResultLog.Time = parsedTime.Format(format)
-					diceResultLog.Command = mes.Content
-					diceResultLog.Result = returnMes
+					diceResultLog.Player.ID = md.AuthorID
+					diceResultLog.Player.Name = md.AuthorName
+					//diceResultLog.Time = parsedTime.Format(format)
+					diceResultLog.Command = md.MessageString
+					diceResultLog.Result = handlerResult.Normal.Content
 					diceResultLogs = append(diceResultLogs, diceResultLog)
 				}
 			}
 		}
 	}
 
-	return returnMes, secretMes, err
+	return handlerResult
 }
 
 // GetVersion バージョン情報取得処理
