@@ -2,12 +2,10 @@ package cthulhu
 
 import (
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/c-ardinal/Nodens/core"
 )
 
@@ -33,15 +31,13 @@ type DiceStatsticsOfCthulhu struct {
 var DiceResultLogOfCthulhus = []DiceResultLogOfCthulhu{}
 
 // CmdRestoreSessionOfCthulhu クトゥルフのセッションを復元する
-func CmdRestoreSessionOfCthulhu(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
-	var returnMes string
-
-	err := core.RestoreSession(ch.ID)
+func CmdRestoreSessionOfCthulhu(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
+	err := core.RestoreSession(md.ChannelID)
 	if err != nil {
-		fmt.Println(err)
-		returnMes = "Session load failed."
+		handlerResult.Normal.Content = "Session load failed."
+		handlerResult.Error = err
 	} else {
-		ses := core.GetSessionByID(ch.ID)
+		ses := core.GetSessionByID(md.ChannelID)
 
 		// PC情報を一度JSONに戻してからクトゥルフ用PC構造体に変換する
 		pcsRawData, _ := json.Marshal((*ses).Pc)
@@ -63,111 +59,128 @@ func CmdRestoreSessionOfCthulhu(opt []string, cs *core.Session, ch *discordgo.Ch
 			(*ses).Npc[npcData.Player.ID] = npcData
 		}
 
-		returnMes = "Session store successfully."
+		handlerResult.Normal.Content = "Session store successfully."
 	}
 
-	return returnMes, "", nil
+	return handlerResult
 }
 
 // CmdRegistryCharacter キャラシ連携ハンドラ
-func CmdRegistryCharacter(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
-	var returnMes string
+func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var cd *CharacterOfCthulhu
 	if len(opt) == 0 {
-		return "Invalid arguments.", "", nil
+		handlerResult.Normal.Content = "Invalid arguments."
+		return handlerResult
 	}
-	if core.CheckExistSession(ch.ID) == true {
-		if core.CheckExistCharacter(ch.ID, mes.Author.ID) == true {
-			return "Character already exists.", "", nil
+	if core.CheckExistSession(md.ChannelID) == true {
+		if core.CheckExistCharacter(md.ChannelID, md.AuthorID) == true {
+			handlerResult.Normal.Content = "Character already exists."
+			return handlerResult
 		}
 		cas, err := GetCharSheetFromURL(opt[0])
 		if err != nil {
-			return "Registry failed.", "", err
+			handlerResult.Normal.Content = "Registry failed."
+			handlerResult.Error = err
+			return handlerResult
 		}
-		cd = GetCharDataFromCharSheet(cas, mes.Author.Username, mes.Author.ID)
-		(*cs).Pc[mes.Author.ID] = cd
-	} else if core.GetParentIDFromChildID(ch.ID) != "" {
-		if core.CheckExistNPCharacter(core.GetParentIDFromChildID(ch.ID), mes.Author.ID) == true {
-			return "Character already exists.", "", nil
+		cd = GetCharDataFromCharSheet(cas, md.AuthorName, md.AuthorID)
+		(*cs).Pc[md.AuthorID] = cd
+	} else if core.GetParentIDFromChildID(md.ChannelID) != "" {
+		if core.CheckExistNPCharacter(core.GetParentIDFromChildID(md.ChannelID), md.AuthorID) == true {
+			handlerResult.Normal.Content = "Character already exists."
+			return handlerResult
 		}
 		cas, err := GetCharSheetFromURL(opt[0])
 		if err != nil {
-			return "Registry failed.", "", err
+			handlerResult.Normal.Content = "Registry failed."
+			handlerResult.Error = err
+			return handlerResult
 		}
-		cd = GetCharDataFromCharSheet(cas, mes.Author.Username, mes.Author.ID)
-		(*cs).Npc[mes.Author.ID] = cd
+		cd = GetCharDataFromCharSheet(cas, md.AuthorName, md.AuthorID)
+		(*cs).Npc[md.AuthorID] = cd
 	} else {
-		return "Session not found.", "", nil
+		handlerResult.Normal.Content = "Session not found."
+		return handlerResult
 	}
-	returnMes = "\r\n====================\r\n"
-	returnMes += "**[名 前]** " + cd.Personal.Name + "\r\n"
-	returnMes += "**[年 齢]** " + strconv.Itoa(cd.Personal.Age) + "歳\r\n"
-	returnMes += "**[性 別]** " + cd.Personal.Sex + "\r\n"
-	returnMes += "**[職 業]** " + cd.Personal.Job + "\r\n"
+
+	handlerResult.Normal.Content = "\r\n====================\r\n"
+	handlerResult.Normal.Content += "**[名 前]** " + cd.Personal.Name + "\r\n"
+	handlerResult.Normal.Content += "**[年 齢]** " + strconv.Itoa(cd.Personal.Age) + "歳\r\n"
+	handlerResult.Normal.Content += "**[性 別]** " + cd.Personal.Sex + "\r\n"
+	handlerResult.Normal.Content += "**[職 業]** " + cd.Personal.Job + "\r\n"
 	for _, cdan := range CdAbilityNameList {
 		a := cd.Ability[cdan]
 		if a.Now == a.Init {
-			returnMes += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + "\r\n"
+			handlerResult.Normal.Content += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + "\r\n"
 		} else {
-			returnMes += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + " (Init: " + strconv.Itoa(a.Init) + ")\r\n"
+			handlerResult.Normal.Content += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + " (Init: " + strconv.Itoa(a.Init) + ")\r\n"
 		}
 	}
-	returnMes += "**[メ モ]** \r\n" + cd.Memo + "\r\n"
-	returnMes += "====================\r\n"
-	return returnMes, "", nil
+	handlerResult.Normal.Content += "**[メ モ]** \r\n" + cd.Memo + "\r\n"
+	handlerResult.Normal.Content += "====================\r\n"
+
+	return handlerResult
 }
 
 // CmdCharaNumCheck 能力値確認ハンドラ
-func CmdCharaNumCheck(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+func CmdCharaNumCheck(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var chara *CharacterOfCthulhu
 	var exist bool
 	if len(opt) == 0 {
-		return "Invalid arguments.", "", nil
+		handlerResult.Normal.Content = "Invalid arguments."
+		return handlerResult
 	}
 	if cs == nil {
-		return "Character not registried.", "", nil
+		handlerResult.Normal.Content = "Character not registried."
+		return handlerResult
 	}
-	if core.GetParentIDFromChildID(ch.ID) != "" {
-		chara, exist = (*cs).Npc[mes.Author.ID].(*CharacterOfCthulhu)
+	if core.GetParentIDFromChildID(md.ChannelID) != "" {
+		chara, exist = (*cs).Npc[md.AuthorID].(*CharacterOfCthulhu)
 	} else {
-		chara, exist = (*cs).Pc[mes.Author.ID].(*CharacterOfCthulhu)
+		chara, exist = (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 	}
 	if exist == false {
-		return "Character not found.", "", nil
+		handlerResult.Normal.Content = "Character not found."
+		return handlerResult
 	}
 	initNum := GetSkillNum(chara, opt[0], "init")
 	if initNum == "-1" {
-		return "Skill not found.", "", nil
+		handlerResult.Normal.Content = "Skill not found."
+		return handlerResult
 	}
 	startNum := GetSkillNum(chara, opt[0], "sum")
 	nowNum := GetSkillNum(chara, opt[0], "now")
 
-	returnMes := "[" + opt[0] + "] Init( " + initNum + " ), Start( " + startNum + "), Now( " + nowNum + " )"
+	handlerResult.Normal.Content = "[" + opt[0] + "] Init( " + initNum + " ), Start( " + startNum + "), Now( " + nowNum + " )"
 
-	return returnMes, "", nil
+	return handlerResult
 }
 
 // CmdCharaNumControl 能力値操作ハンドラ
-func CmdCharaNumControl(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+func CmdCharaNumControl(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var chara *CharacterOfCthulhu
 	var exist bool
 	if len(opt) < 2 {
-		return "Invalid arguments.", "", nil
+		handlerResult.Normal.Content = "Invalid arguments."
+		return handlerResult
 	}
 	if cs == nil {
-		return "Character not registried.", "", nil
+		handlerResult.Normal.Content = "Character not registried."
+		return handlerResult
 	}
-	if core.GetParentIDFromChildID(ch.ID) != "" {
-		chara, exist = (*cs).Npc[mes.Author.ID].(*CharacterOfCthulhu)
+	if core.GetParentIDFromChildID(md.ChannelID) != "" {
+		chara, exist = (*cs).Npc[md.AuthorID].(*CharacterOfCthulhu)
 	} else {
-		chara, exist = (*cs).Pc[mes.Author.ID].(*CharacterOfCthulhu)
+		chara, exist = (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 	}
 	if exist == false {
-		return "Character not found.", "", nil
+		handlerResult.Normal.Content = "Character not found."
+		return handlerResult
 	}
 	oldNum := GetSkillNum(chara, opt[0], "now")
 	if oldNum == "-1" {
-		return "Skill not found.", "", nil
+		handlerResult.Normal.Content = "Skill not found."
+		return handlerResult
 	}
 	diffRegex := regexp.MustCompile("^[+-]?[0-9]+$")
 	var diffCmd string = opt[1]
@@ -179,7 +192,9 @@ func CmdCharaNumControl(opt []string, cs *core.Session, ch *discordgo.Channel, m
 		}
 		rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diffCmd)
 		if err != nil {
-			return "Invalid diff num.", "", nil
+			handlerResult.Normal.Content = "Invalid diff num."
+			handlerResult.Error = err
+			return handlerResult
 		}
 		var sum int
 		for _, r := range rollResult.Dices {
@@ -195,22 +210,25 @@ func CmdCharaNumControl(opt []string, cs *core.Session, ch *discordgo.Channel, m
 	}
 	newNum := AddSkillNum(chara, opt[0], diffCmd)
 
-	returnMes := "[" + opt[0] + "] " + oldNum + " => " + newNum + " (Diff: " + diffCmd + ")"
+	handlerResult.Normal.Content = "[" + opt[0] + "] " + oldNum + " => " + newNum + " (Diff: " + diffCmd + ")"
 
-	return returnMes, "", nil
+	return handlerResult
 }
 
 // CmdLinkRoll キャラシ連携ダイスロールハンドラ
-func CmdLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+func CmdLinkRoll(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	if len(opt) == 0 {
-		return "Invalid arguments.", "", nil
+		handlerResult.Normal.Content = "Invalid arguments."
+		return handlerResult
 	}
 	if cs == nil {
-		return "PC not registried.", "", nil
+		handlerResult.Normal.Content = "PC not registried."
+		return handlerResult
 	}
-	pc, exist := (*cs).Pc[mes.Author.ID].(*CharacterOfCthulhu)
+	pc, exist := (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 	if exist == false {
-		return "PC not found.", "", nil
+		handlerResult.Normal.Content = "PC not found."
+		return handlerResult
 	}
 	diceCmd := "CCB<=" + opt[0]
 	exRegex := regexp.MustCompile("[^\\+\\-\\*\\/ 　]+")
@@ -219,40 +237,47 @@ func CmdLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes *dis
 		if ignoreRegex.MatchString(ex) == false {
 			exNum := GetSkillNum(pc, ex, "now")
 			if exNum == "-1" {
-				return "Skill not found.", "", nil
+				handlerResult.Normal.Content = "Skill not found."
+				return handlerResult
 			}
 			diceCmd = strings.Replace(diceCmd, ex, exNum, -1)
 		}
 	}
 	rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
+	handlerResult.Normal.Content = rollResult.Result
 
 	if err == nil {
-		const format = "2006/01/02_15:04:05"
-		parsedTime, _ := mes.Timestamp.Parse()
+		handlerResult.Error = err
+
+		//const format = "2006/01/02_15:04:05"
+		//parsedTime, _ := mes.Timestamp.Parse()
 		var cthulhuDiceResultLog DiceResultLogOfCthulhu
 
-		cthulhuDiceResultLog.Player.ID = mes.Author.ID
-		cthulhuDiceResultLog.Player.Name = mes.Author.Username
-		cthulhuDiceResultLog.Time = parsedTime.Format(format)
-		cthulhuDiceResultLog.Command = mes.Content
+		cthulhuDiceResultLog.Player.ID = md.AuthorID
+		cthulhuDiceResultLog.Player.Name = md.AuthorName
+		//cthulhuDiceResultLog.Time = parsedTime.Format(format)
+		cthulhuDiceResultLog.Command = md.MessageString
 		cthulhuDiceResultLog.Result = rollResult.Result
 		DiceResultLogOfCthulhus = append(DiceResultLogOfCthulhus, cthulhuDiceResultLog)
 	}
 
-	return rollResult.Result, "", err
+	return handlerResult
 }
 
 // CmdSecretLinkRoll キャラシ連携Secretダイスロールハンドラ
-func CmdSecretLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+func CmdSecretLinkRoll(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	if len(opt) == 0 {
-		return "Invalid arguments.", "", nil
+		handlerResult.Normal.Content = "Invalid arguments."
+		return handlerResult
 	}
 	if cs == nil {
-		return "NPC not registried.", "", nil
+		handlerResult.Normal.Content = "NPC not registried."
+		return handlerResult
 	}
-	pc, exist := (*cs).Npc[mes.Author.ID].(*CharacterOfCthulhu)
+	pc, exist := (*cs).Npc[md.AuthorID].(*CharacterOfCthulhu)
 	if exist == false {
-		return "NPC not found.", "", nil
+		handlerResult.Normal.Content = "NPC not found."
+		return handlerResult
 	}
 	diceCmd := "SCCB<=" + opt[0]
 	exRegex := regexp.MustCompile("[^\\+\\-\\*\\/ 　]+")
@@ -261,65 +286,75 @@ func CmdSecretLinkRoll(opt []string, cs *core.Session, ch *discordgo.Channel, me
 		if ignoreRegex.MatchString(ex) == false {
 			exNum := GetSkillNum(pc, ex, "now")
 			if exNum == "-1" {
-				return "Skill not found.", "", nil
+				handlerResult.Normal.Content = "Skill not found."
+				return handlerResult
 			}
 			diceCmd = strings.Replace(diceCmd, ex, exNum, -1)
 		}
 	}
 	rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
-	var secretMes string
+	handlerResult.Normal.Content = rollResult.Result
 	if rollResult.Secret == true {
-		secretMes = "**SECRET DICE**"
+		handlerResult.Secret.Content = "**SECRET DICE**"
 	}
-	return rollResult.Result, secretMes, err
+	handlerResult.Error = err
+
+	return handlerResult
 }
 
 // CmdSanCheckRoll SAN値チェック処理ハンドラ
-func CmdSanCheckRoll(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+func CmdSanCheckRoll(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var sucSub string
 	var failSub string
-	var resultMes string
 
 	if len(opt) < 2 {
-		return "Invalid arguments.", "", nil
+		handlerResult.Normal.Content = "Invalid arguments."
+		return handlerResult
 	}
 	if cs == nil {
-		return "PC not registried.", "", nil
+		handlerResult.Normal.Content = "PC not registried."
+		return handlerResult
 	}
-	pc, exist := (*cs).Pc[mes.Author.ID].(*CharacterOfCthulhu)
+	pc, exist := (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 	if exist == false {
-		return "PC not found.", "", nil
+		handlerResult.Normal.Content = "PC not found."
+		return handlerResult
 	}
 
 	orgSanNum := GetSkillNum(pc, "san", "now")
 	sanRollCmd := "SCCB<=" + orgSanNum
 	sanRollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, sanRollCmd)
 
-	if strings.Contains(sanRollResult.Result, "成功") || strings.Contains(sanRollResult.Result, "スペシャル") {
-		if strings.Contains(opt[0], "d") {
-			sucRollResult, _ := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[0])
-			sucSub = "-" + core.CalcDicesSum(sucRollResult.Dices)
-		} else {
-			sucSub = "-" + opt[0]
-		}
-		newNum := AddSkillNum(pc, "san", sucSub)
-		resultMes = "sanc > [ " + sanRollResult.Result + " ] >> SAN: " + orgSanNum + " -> " + newNum + " ( " + sucSub + " )"
+	if err != nil {
+		handlerResult.Normal.Content = "Server error."
+		handlerResult.Error = err
 	} else {
-		if strings.Contains(opt[1], "d") {
-			failRollResult, _ := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[1])
-			failSub = "-" + core.CalcDicesSum(failRollResult.Dices)
+		if strings.Contains(sanRollResult.Result, "成功") || strings.Contains(sanRollResult.Result, "スペシャル") {
+			if strings.Contains(opt[0], "d") {
+				sucRollResult, _ := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[0])
+				sucSub = "-" + core.CalcDicesSum(sucRollResult.Dices)
+			} else {
+				sucSub = "-" + opt[0]
+			}
+			newNum := AddSkillNum(pc, "san", sucSub)
+			handlerResult.Normal.Content = "sanc > [ " + sanRollResult.Result + " ] >> SAN: " + orgSanNum + " -> " + newNum + " ( " + sucSub + " )"
 		} else {
-			failSub = "-" + opt[1]
+			if strings.Contains(opt[1], "d") {
+				failRollResult, _ := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, opt[1])
+				failSub = "-" + core.CalcDicesSum(failRollResult.Dices)
+			} else {
+				failSub = "-" + opt[1]
+			}
+			newNum := AddSkillNum(pc, "san", failSub)
+			handlerResult.Normal.Content = "sanc >> [ " + sanRollResult.Result + " ] >> SAN: " + orgSanNum + " -> " + newNum + " ( " + failSub + " )"
 		}
-		newNum := AddSkillNum(pc, "san", failSub)
-		resultMes = "sanc >> [ " + sanRollResult.Result + " ] >> SAN: " + orgSanNum + " -> " + newNum + " ( " + failSub + " )"
 	}
 
-	return resultMes, "", err
+	return handlerResult
 }
 
 // CmdShowStatistics ダイスロール統計表示処理
-func CmdShowStatistics(opt []string, cs *core.Session, ch *discordgo.Channel, mes *discordgo.MessageCreate) (string, string, error) {
+func CmdShowStatistics(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var diceResultLogs = core.GetDiceResultLogs()
 	var diceResultStatstics = map[string]DiceStatsticsOfCthulhu{}
 
@@ -370,26 +405,26 @@ func CmdShowStatistics(opt []string, cs *core.Session, ch *discordgo.Channel, me
 	}
 
 	// 集計結果の構築
-	var returnMes string
+
 	if 0 < len(diceResultStatstics) {
-		returnMes = "\r\n===================="
+		handlerResult.Normal.Content = "\r\n===================="
 		for _, drs := range diceResultStatstics {
-			returnMes += "\r\n【" + drs.Player.Name + "】\r\n"
+			handlerResult.Normal.Content += "\r\n【" + drs.Player.Name + "】\r\n"
 			if len(drs.Critical) > 0 {
-				returnMes += "●決定的成功：\r\n"
-				returnMes += strings.Join(drs.Critical, ", ")
-				returnMes += "\r\n"
+				handlerResult.Normal.Content += "●決定的成功：\r\n"
+				handlerResult.Normal.Content += strings.Join(drs.Critical, ", ")
+				handlerResult.Normal.Content += "\r\n"
 			}
 			if len(drs.Fumble) > 0 {
-				returnMes += "●致命的失敗：\r\n"
-				returnMes += strings.Join(drs.Fumble, ", ")
-				returnMes += "\r\n"
+				handlerResult.Normal.Content += "●致命的失敗：\r\n"
+				handlerResult.Normal.Content += strings.Join(drs.Fumble, ", ")
+				handlerResult.Normal.Content += "\r\n"
 			}
 		}
-		returnMes += "====================\r\n"
+		handlerResult.Normal.Content += "====================\r\n"
 	} else {
-		returnMes += "No data."
+		handlerResult.Normal.Content += "No data."
 	}
 
-	return returnMes, "", nil
+	return handlerResult
 }
