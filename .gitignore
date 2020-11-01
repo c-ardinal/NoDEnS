@@ -17,3 +17,4 @@ MySystemConfig\.json
 .DS_Store
 DebugConfig\.json
 session_data
+MyDebugConfig\.json
