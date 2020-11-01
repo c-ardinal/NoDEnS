@@ -96,7 +96,7 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 	}
 
 	/* 計算式が含まれているか確認 */
-	calcCheckRegp := regexp.MustCompile("[\\+-/\\*\\(\\)]")
+	calcCheckRegp := regexp.MustCompile("[\\( ]*[\\+\\- ]*[a-zA-Z0-9 ]+[\\) ]*[\\+\\-\\/\\* ]{1}[\\( ]*[\\+\\- ]*[a-zA-Z0-9 ]+[\\) ]*")
 	isCalcMutch := calcCheckRegp.MatchString(diceCalcStr)
 	if isCalcMutch {
 		/* 計算式が含まれていた場合 */

@@ -55,7 +55,7 @@ func (f CmdHandleFunc) ExecuteCmd(opts []string, cs *Session, md MessageData) (h
 }
 
 // NodensVersion nodensパッケージ&cthulhuパッケージのバージョン情報
-const NodensVersion string = "0.0.9"
+const NodensVersion string = "0.2.3"
 
 // cmdHandleMap コマンドハンドル群登録用マップ
 var cmdHandleMap = map[string]map[string]CmdHandleFunc{}
