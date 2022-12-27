@@ -56,8 +56,7 @@ func main() {
 	core.LoadConfig(configFile)
 
 	// Discordのインスタンス生成
-	discord, err := discordgo.New()
-	discord.Token = core.GetConfig().BotToken
+	discord, err := discordgo.New(core.GetConfig().BotToken)
 	if err != nil {
 		log.Println(err)
 		panic(err)
