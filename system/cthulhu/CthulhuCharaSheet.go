@@ -245,7 +245,7 @@ func GetCharDataFromCharSheet(cs *CharaSheet, plName string, plID string) *Chara
 	cd.Skill = map[string]*Skill{}
 	atkSkillList := append([]string{"回避", "キック", "組み付き", "こぶし（パンチ）", "頭突き", "投擲", "マーシャルアーツ", "拳銃", "サブマシンガン", "ショットガン", "マシンガン", "ライフル"}, (*cs).SkillAtkExName...)
 	searchSkillList := append([]string{"応急手当", "鍵開け", "隠す", "隠れる", "聞き耳", "忍び歩き", "写真術", "精神分析", "追跡", "登攀", "図書館", "目星"}, (*cs).SkillSearchExName...)
-	actSkillList := append([]string{"運転", "機械修理", "重機械操作", "乗馬", "水泳", "製作", "操縦", "跳躍", "電気修理", "ナビゲート", "返送"}, (*cs).SkillActExName...)
+	actSkillList := append([]string{"運転", "機械修理", "重機械操作", "乗馬", "水泳", "製作", "操縦", "跳躍", "電気修理", "ナビゲート", "変装"}, (*cs).SkillActExName...)
 	negSkillList := append([]string{"言いくるめ", "信用", "説得", "根切り", "母国語"}, (*cs).SkillNegExName...)
 	knowSkillList := append([]string{"医学", "オカルト", "化学", "クトゥルフ神話", "芸術", "経理", "考古学", "コンピューター", "心理学", "人類学", "生物学", "地質学", "電子工学", "天文学", "博物学", "物理学", "法律", "薬学", "歴史"}, (*cs).SkillKnowExName...)
 	allSkillList := []*[]string{&atkSkillList, &searchSkillList, &actSkillList, &negSkillList, &knowSkillList}
