@@ -564,8 +564,8 @@ func CmdSecretLinkRoll(opt []string, cs *core.Session, md core.MessageData) (han
 
 		/* Embedメッセージ */
 		handlerResult.Secret.Embed = &discordgo.MessageEmbed{
-			Title: "<< SECRET DICE >>",
-			Color: 0x00ff00, // Green
+			Title: "SECRET DICE",
+			Color: 0xffff00, // Yellow
 		}
 	}
 
