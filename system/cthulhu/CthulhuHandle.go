@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"Nodens/core"
+
 	"github.com/bwmarrin/discordgo"
-	"github.com/c-ardinal/Nodens/core"
 )
 
 // DiceResultLogOfCthulhu ダイスロール実行ログ型
@@ -19,8 +20,8 @@ type DiceResultLogOfCthulhu struct {
 	Result  string
 }
 
-// DiceStatsticsOfCthulhu ダイスロール統計型
-type DiceStatsticsOfCthulhu struct {
+// DiceStatisticsOfCthulhu ダイスロール統計型
+type DiceStatisticsOfCthulhu struct {
 	Player   core.NaID
 	Critical []string
 	Special  []string
@@ -229,7 +230,7 @@ func CmdCharaNumCheck(opt []string, cs *core.Session, md core.MessageData) (hand
 		returnMes = "Invalid arguments."
 	} else {
 		if cs == nil {
-			returnMes = "Character not registried."
+			returnMes = "Character not registered."
 		} else {
 			if core.GetParentIDFromChildID(md.ChannelID) != "" {
 				chara, exist = (*cs).Npc[md.AuthorID].(*CharacterOfCthulhu)
@@ -303,7 +304,7 @@ func CmdCharaNumControl(opt []string, cs *core.Session, md core.MessageData) (ha
 		returnMes = "Invalid arguments."
 	} else {
 		if cs == nil {
-			returnMes = "Character not registried."
+			returnMes = "Character not registered."
 		} else {
 			if core.GetParentIDFromChildID(md.ChannelID) != "" {
 				chara, exist = (*cs).Npc[md.AuthorID].(*CharacterOfCthulhu)
@@ -398,7 +399,7 @@ func CmdLinkRoll(opt []string, cs *core.Session, md core.MessageData) (handlerRe
 		returnMes = "Invalid arguments."
 	} else {
 		if cs == nil {
-			returnMes = "PC not registried."
+			returnMes = "PC not registered."
 		} else {
 			pc, exist := (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 			if exist == false {
@@ -418,7 +419,7 @@ func CmdLinkRoll(opt []string, cs *core.Session, md core.MessageData) (handlerRe
 							if err != nil {
 								handlerResult.Error = err
 							} else {
-								/* Non proccess */
+								/* Non process */
 							}
 						}
 					}
@@ -473,7 +474,7 @@ func CmdSecretLinkRoll(opt []string, cs *core.Session, md core.MessageData) (han
 		returnMes = "Invalid arguments."
 	} else {
 		if cs == nil {
-			returnMes = "NPC not registried."
+			returnMes = "NPC not registered."
 		} else {
 			pc, exist := (*cs).Npc[md.AuthorID].(*CharacterOfCthulhu)
 			if exist == false {
@@ -493,7 +494,7 @@ func CmdSecretLinkRoll(opt []string, cs *core.Session, md core.MessageData) (han
 							if err != nil {
 								handlerResult.Error = err
 							} else {
-								/* Non proccess */
+								/* Non process */
 							}
 						}
 					}
@@ -555,7 +556,7 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, md core.MessageData) (handl
 		returnMes = "Invalid arguments."
 	} else {
 		if cs == nil {
-			returnMes = "PC not registried."
+			returnMes = "PC not registered."
 		} else {
 			pc, exist := (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 			if exist == false {
@@ -644,14 +645,14 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, md core.MessageData) (handl
 // CmdShowStatistics ダイスロール統計表示処理
 func CmdShowStatistics(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var diceResultLogs = core.GetDiceResultLogs()
-	var diceResultStatstics = map[string]DiceStatsticsOfCthulhu{}
+	var diceResultStatistics = map[string]DiceStatisticsOfCthulhu{}
 
 	// 共通ダイスの集計
 	for _, drl := range diceResultLogs {
-		drs, isExist := diceResultStatstics[drl.Player.ID]
+		drs, isExist := diceResultStatistics[drl.Player.ID]
 
 		if isExist == false {
-			drs = DiceStatsticsOfCthulhu{}
+			drs = DiceStatisticsOfCthulhu{}
 		}
 
 		if drs.Player.ID == "" {
@@ -666,18 +667,18 @@ func CmdShowStatistics(opt []string, cs *core.Session, md core.MessageData) (han
 
 		}
 
-		diceResultStatstics[drl.Player.ID] = drs
+		diceResultStatistics[drl.Player.ID] = drs
 	}
 
 	// クトゥルフダイスの集計
 	for _, drl := range DiceResultLogOfCthulhus {
-		drs, isExist := diceResultStatstics[drl.Player.ID]
+		drs, isExist := diceResultStatistics[drl.Player.ID]
 
 		if isExist == false {
-			drs = DiceStatsticsOfCthulhu{}
+			drs = DiceStatisticsOfCthulhu{}
 		}
 
-		if diceResultStatstics[drl.Player.ID].Player.ID == "" {
+		if diceResultStatistics[drl.Player.ID].Player.ID == "" {
 			drs.Player.ID = drl.Player.ID
 			drs.Player.Name = drl.Player.Name
 		}
@@ -689,14 +690,14 @@ func CmdShowStatistics(opt []string, cs *core.Session, md core.MessageData) (han
 
 		}
 
-		diceResultStatstics[drl.Player.ID] = drs
+		diceResultStatistics[drl.Player.ID] = drs
 	}
 
 	// 集計結果の構築
 
-	if 0 < len(diceResultStatstics) {
+	if 0 < len(diceResultStatistics) {
 		handlerResult.Normal.Content = "\r\n===================="
-		for _, drs := range diceResultStatstics {
+		for _, drs := range diceResultStatistics {
 			handlerResult.Normal.Content += "\r\n【" + drs.Player.Name + "】\r\n"
 			if len(drs.Critical) > 0 {
 				handlerResult.Normal.Content += "●決定的成功：\r\n"

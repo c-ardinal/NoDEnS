@@ -14,7 +14,7 @@ type Session struct {
 	Npc      map[string]interface{} `json:"npc"`
 }
 
-// Discord Discrod情報構造体
+// Discord Discord情報構造体
 type Discord struct {
 	Parent NaID   `json:"text"`
 	Child  []NaID `json:"private"`
@@ -112,6 +112,26 @@ func CheckExistCharacter(chID string, plID string) bool {
 func CheckExistNPCharacter(chID string, plID string) bool {
 	ts, _ := trpgSession[chID]
 	_, result := (*ts).Npc[plID]
+	return result
+}
+
+// GetCharacterName キャラ名取得処理
+func GetCharacterName(chID string, plID string) string {
+	var result string = ""
+	ts, sesExist := trpgSession[chID]
+
+	if sesExist == true {
+		cdGetFunc := GetCharacterDataGetFunc((*ts).Scenario.System, "CharacterName")
+		if cdGetFunc != nil {
+			_, pcExist := (*ts).Pc[plID]
+			_, npcExist := (*ts).Npc[plID]
+			if pcExist == true {
+				result = cdGetFunc((*ts).Pc[plID])
+			} else if npcExist == true {
+				result = cdGetFunc((*ts).Npc[plID])
+			}
+		}
+	}
 	return result
 }
 

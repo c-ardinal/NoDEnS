@@ -14,9 +14,6 @@ type DiceResultLog struct {
 	Result  string
 }
 
-// diceResultLogs ダイスロール実行ログ格納変数
-var diceResultLogs = []DiceResultLog{}
-
 // MessageData ハンドラに渡すメッセージのデータ
 type MessageData struct {
 	ChannelID     string
@@ -54,11 +51,22 @@ func (f CmdHandleFunc) ExecuteCmd(opts []string, cs *Session, md MessageData) (h
 	return f(opts, cs, md)
 }
 
-// NodensVersion nodensパッケージ&cthulhuパッケージのバージョン情報
-const NodensVersion string = "0.2.4"
+// CharacterDataGetFunc コマンドハンドラ型
+type CharacterDataGetFunc func(cd interface{}) string
+
+// ExecuteCharacterDataGet CharacterDataGetFunc実行処理
+func (f CharacterDataGetFunc) ExecuteCharacterDataGet(cd interface{}) string {
+	return f(cd)
+}
+
+// diceResultLogs ダイスロール実行ログ格納変数
+var diceResultLogs = []DiceResultLog{}
 
 // cmdHandleMap コマンドハンドル群登録用マップ
 var cmdHandleMap = map[string]map[string]CmdHandleFunc{}
+
+// cdGetFuncMap キャラデータ取得関数群登録用マップ
+var cdGetFuncMap = map[string]map[string]CharacterDataGetFunc{}
 
 // AddCmdHandler コマンドハンドラ登録処理
 func AddCmdHandler(system string, cmd string, handler CmdHandleFunc) {
@@ -110,6 +118,7 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 				if handlerResult.Error != nil {
 					handlerResult.Normal.Content = "Error: " + handlerResult.Error.Error()
 				} else {
+
 					handlerResult.Normal.Content = rollResult.Result
 				}
 				if rollResult.Secret == true {
@@ -135,9 +144,25 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 	return handlerResult
 }
 
-// GetVersion バージョン情報取得処理
-func GetVersion() string {
-	return NodensVersion
+// AddCharacterDataGetFunc キャラデータ取得関数登録処理
+func AddCharacterDataGetFunc(system string, dataName string, getFunc CharacterDataGetFunc) {
+	if cdGetFuncMap[system] == nil {
+		cdGetFuncMap[system] = make(map[string]CharacterDataGetFunc)
+	}
+	cdGetFuncMap[system][dataName] = getFunc
+}
+
+// GetCharacterDataGetFuncキャラデータ取得関数登録処理
+func GetCharacterDataGetFunc(system string, dataName string) CharacterDataGetFunc {
+	var result CharacterDataGetFunc = nil
+	_, systemExist := cdGetFuncMap[system]
+	if systemExist == true {
+		_, dnExist := cdGetFuncMap[system][dataName]
+		if dnExist == true {
+			result = cdGetFuncMap[system][dataName]
+		}
+	}
+	return result
 }
 
 // GetDiceResultLogs 代スクロール実行ログ取得処理
