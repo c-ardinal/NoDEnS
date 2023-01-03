@@ -116,6 +116,7 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 			if CheckExistSession(targetID) {
 				/* 有効にするメッセージタイプ */
 				handlerResult.Normal.EnableType = EnEmbed
+				handlerResult.Secret.EnableType = EnEmbed
 
 				var rollResult BCDiceRollResult
 				rollResult, handlerResult.Error = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, md.MessageString)
@@ -142,7 +143,7 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 					/* テキストメッセージ */
 					handlerResult.Secret.Content = "**SECRET DICE**"
 					/* Embedメッセージ */
-					handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+					handlerResult.Secret.Embed = &discordgo.MessageEmbed{
 						Title: "SECRET DICE",
 						Color: 0xffff00, // Yellow
 					}

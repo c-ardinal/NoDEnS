@@ -111,16 +111,15 @@ func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 		/* シークレットメッセージの送信 */
 		if handlerResult.Secret.EnableType == core.EnContent {
 			if handlerResult.Secret.Content != "" {
-				handlerResult.Secret.Content = characterName + handlerResult.Secret.Content
-				session.ChannelMessageSendReply(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Content, &ref)
+				handlerResult.Secret.Content = "<@" + md.AuthorID + ">" + handlerResult.Secret.Content
+				session.ChannelMessageSend(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Content)
 			}
 		} else if handlerResult.Secret.EnableType == core.EnEmbed {
-			embedAuthor := &discordgo.MessageEmbedAuthor{
-				Name: characterName,
-				URL:  cSheetUrl,
+			messageSend := &discordgo.MessageSend{
+				Content: "<@" + md.AuthorID + ">",
+				Embed:   handlerResult.Secret.Embed,
 			}
-			handlerResult.Secret.Embed.Author = embedAuthor
-			session.ChannelMessageSendEmbedReply(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Embed, &ref)
+			session.ChannelMessageSendComplex(core.GetParentIDFromChildID(md.ChannelID), messageSend)
 		} else {
 			/* Non process */
 		}
