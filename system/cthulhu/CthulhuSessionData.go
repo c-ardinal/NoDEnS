@@ -10,6 +10,7 @@ import (
 // CharacterOfCthulhu キャラクタ情報構造体
 type CharacterOfCthulhu struct {
 	Player     core.NaID           `json:"player"`
+	URL        string              `json:"url"`
 	Md         string              `json:"md"`
 	ID         string              `json:"id"`
 	Personal   Personal            `json:"personal-data"`
@@ -160,4 +161,9 @@ func AddSkillNum(pc *CharacterOfCthulhu, skill string, add string) string {
 // GetCharacterName キャラクター名取得
 func GetCharacterName(pc interface{}) string {
 	return pc.(*CharacterOfCthulhu).Personal.Name
+}
+
+// GetCharacterName キャラクター名取得
+func GetCharacterSheetUrl(pc interface{}) string {
+	return pc.(*CharacterOfCthulhu).URL
 }

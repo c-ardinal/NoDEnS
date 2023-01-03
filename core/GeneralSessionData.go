@@ -115,13 +115,13 @@ func CheckExistNPCharacter(chID string, plID string) bool {
 	return result
 }
 
-// GetCharacterName キャラ名取得処理
-func GetCharacterName(chID string, plID string) string {
+// GetCharacterData キャラ名取得処理
+func GetCharacterData(chID string, plID string, dataName string) string {
 	var result string = ""
 	ts, sesExist := trpgSession[chID]
 
 	if sesExist == true {
-		cdGetFunc := GetCharacterDataGetFunc((*ts).Scenario.System, "CharacterName")
+		cdGetFunc := GetCharacterDataGetFunc((*ts).Scenario.System, dataName)
 		if cdGetFunc != nil {
 			_, pcExist := (*ts).Pc[plID]
 			_, npcExist := (*ts).Npc[plID]

@@ -17,6 +17,7 @@ type DiceResultLog struct {
 // MessageData ハンドラに渡すメッセージのデータ
 type MessageData struct {
 	ChannelID     string
+	MessageID     string
 	AuthorID      string
 	AuthorName    string
 	MessageString string
@@ -33,7 +34,7 @@ type HandlerResult struct {
 type MessageTemplate struct {
 	EnableType int
 	Content    string
-	Embed      discordgo.MessageEmbed
+	Embed      *discordgo.MessageEmbed
 }
 
 const (
@@ -113,17 +114,38 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 		} else {
 			/* セッションが生成されている場合のみダイスロールを実行 */
 			if CheckExistSession(targetID) {
+				/* 有効にするメッセージタイプ */
+				handlerResult.Normal.EnableType = EnEmbed
+
 				var rollResult BCDiceRollResult
 				rollResult, handlerResult.Error = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, md.MessageString)
 				if handlerResult.Error != nil {
+					/* テキストメッセージ */
 					handlerResult.Normal.Content = "Error: " + handlerResult.Error.Error()
+					/* Embedメッセージ */
+					handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+						Description: handlerResult.Normal.Content,
+						Color:       0xff0000, // Red
+					}
 				} else {
-
+					/* テキストメッセージ */
 					handlerResult.Normal.Content = rollResult.Result
+					/* Embedメッセージ */
+					handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+						Description: handlerResult.Normal.Content,
+						Color:       0x00ff00, // Green
+					}
 				}
+
 				if rollResult.Secret == true {
 					/* シークレットダイスが振られた旨のメッセージ */
+					/* テキストメッセージ */
 					handlerResult.Secret.Content = "**SECRET DICE**"
+					/* Embedメッセージ */
+					handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+						Title: "SECRET DICE",
+						Color: 0xffff00, // Yellow
+					}
 				} else {
 					/* シークレットダイス以外の実行結果を記録 */
 					//const format = "2006/01/02_15:04:05"

@@ -2,7 +2,6 @@ package cthulhu
 
 import (
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -66,7 +65,7 @@ func CmdRestoreSessionOfCthulhu(opt []string, cs *core.Session, md core.MessageD
 			(*ses).Npc[npcData.Player.ID] = npcData
 		}
 
-		returnMes = "Session store successfully."
+		returnMes = "Session restore successfully."
 		returnMesColor = 0x00ff00 // Green
 	}
 
@@ -77,8 +76,10 @@ func CmdRestoreSessionOfCthulhu(opt []string, cs *core.Session, md core.MessageD
 	handlerResult.Normal.Content = returnMes
 
 	/* Embedメッセージ */
-	handlerResult.Normal.Embed.Description = returnMes
-	handlerResult.Normal.Embed.Color = returnMesColor
+	handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+		Description: returnMes,
+		Color:       returnMesColor,
+	}
 
 	return handlerResult
 }
@@ -102,6 +103,7 @@ func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (
 					handlerResult.Error = err
 				} else {
 					cd = GetCharDataFromCharSheet(cas, md.AuthorName, md.AuthorID)
+					(*cd).URL = opt[0]
 					(*cs).Pc[md.AuthorID] = cd
 				}
 			}
@@ -116,6 +118,7 @@ func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (
 					handlerResult.Error = err
 				} else {
 					cd = GetCharDataFromCharSheet(cas, md.AuthorName, md.AuthorID)
+					(*cd).URL = opt[0]
 					(*cs).Npc[md.AuthorID] = cd
 				}
 			}
@@ -150,13 +153,13 @@ func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (
 
 	/* Embedメッセージ */
 	if returnMes != "" {
-		handlerResult.Normal.Embed.Description = returnMes
-		handlerResult.Normal.Embed.Color = 0xff0000 // Red
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Description: returnMes,
+			Color:       0xff0000, // Red
+		}
 	} else {
-		handlerResult.Normal.Embed.Title = cd.Personal.Name
-		handlerResult.Normal.Embed.URL = opt[0]
-		handlerResult.Normal.Embed.Color = 0x00ff00
-		handlerResult.Normal.Embed.Fields = append(handlerResult.Normal.Embed.Fields,
+		var fields []*discordgo.MessageEmbedField
+		fields = append(fields,
 			&discordgo.MessageEmbedField{
 				Name:   "\u200B",
 				Value:  "---------------------------------------------------------",
@@ -186,14 +189,14 @@ func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (
 		for _, cdan := range CdAbilityNameList {
 			a := cd.Ability[cdan]
 			if a.Now == a.Init {
-				handlerResult.Normal.Embed.Fields = append(handlerResult.Normal.Embed.Fields,
+				fields = append(fields,
 					&discordgo.MessageEmbedField{
 						Name:   "[ " + a.Name + " ]",
 						Value:  strconv.Itoa(cd.Ability[a.Name].Now),
 						Inline: true,
 					})
 			} else {
-				handlerResult.Normal.Embed.Fields = append(handlerResult.Normal.Embed.Fields,
+				fields = append(fields,
 					&discordgo.MessageEmbedField{
 						Name:   "[ " + a.Name + " ]",
 						Value:  strconv.Itoa(cd.Ability[a.Name].Now) + " (Init: " + strconv.Itoa(a.Init) + ")",
@@ -201,8 +204,7 @@ func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (
 					})
 			}
 		}
-
-		handlerResult.Normal.Embed.Fields = append(handlerResult.Normal.Embed.Fields,
+		fields = append(fields,
 			&discordgo.MessageEmbedField{
 				Name:   "\u200B",
 				Value:  "---------------------------------------------------------",
@@ -213,6 +215,14 @@ func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (
 				Value:  cd.Memo,
 				Inline: false,
 			})
+
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Title:  cd.Personal.Name,
+			URL:    opt[0],
+			Color:  0x00ff00, // Green
+			Fields: fields,
+		}
+
 	}
 	return handlerResult
 }
@@ -264,12 +274,13 @@ func CmdCharaNumCheck(opt []string, cs *core.Session, md core.MessageData) (hand
 
 	/* Embedメッセージ */
 	if returnMes != "" {
-		handlerResult.Normal.Embed.Description = returnMes
-		handlerResult.Normal.Embed.Color = 0xff0000 // Red
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Description: returnMes,
+			Color:       0xff0000, // Red
+		}
 	} else {
-		handlerResult.Normal.Embed.Title = "< " + opt[0] + " >"
-		handlerResult.Normal.Embed.Color = 0x00ff00
-		handlerResult.Normal.Embed.Fields = append(handlerResult.Normal.Embed.Fields,
+		var fields []*discordgo.MessageEmbedField
+		fields = append(fields,
 			&discordgo.MessageEmbedField{
 				Name:   "[ Init ]",
 				Value:  initNum,
@@ -286,6 +297,11 @@ func CmdCharaNumCheck(opt []string, cs *core.Session, md core.MessageData) (hand
 				Inline: true,
 			},
 		)
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Title:  "< " + opt[0] + " >",
+			Color:  0x00ff00, // Green
+			Fields: fields,
+		}
 	}
 
 	return handlerResult
@@ -298,6 +314,7 @@ func CmdCharaNumControl(opt []string, cs *core.Session, md core.MessageData) (ha
 	var oldNum string
 	var newNum string
 	var diffCmd string
+	var rollResultMessage string
 	var returnMes string
 
 	if len(opt) < 2 {
@@ -327,7 +344,7 @@ func CmdCharaNumControl(opt []string, cs *core.Session, md core.MessageData) (ha
 							minusFlag = true
 						}
 						rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diffCmd)
-						handlerResult.Normal.Embed.Description = rollResult.Result
+						rollResultMessage = rollResult.Result
 						if err != nil {
 							returnMes = "Invalid diff num."
 							handlerResult.Error = err
@@ -362,12 +379,13 @@ func CmdCharaNumControl(opt []string, cs *core.Session, md core.MessageData) (ha
 
 	/* Embedメッセージ */
 	if returnMes != "" {
-		handlerResult.Normal.Embed.Description = returnMes
-		handlerResult.Normal.Embed.Color = 0xff0000 // Red
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Description: returnMes,
+			Color:       0xff0000, // Red
+		}
 	} else {
-		handlerResult.Normal.Embed.Title = "< " + opt[0] + " >"
-		handlerResult.Normal.Embed.Color = 0x00ff00 // Green
-		handlerResult.Normal.Embed.Fields = append(handlerResult.Normal.Embed.Fields,
+		var fields []*discordgo.MessageEmbedField
+		fields = append(fields,
 			&discordgo.MessageEmbedField{
 				Name:   "[ Before ]",
 				Value:  oldNum,
@@ -384,6 +402,12 @@ func CmdCharaNumControl(opt []string, cs *core.Session, md core.MessageData) (ha
 				Inline: true,
 			},
 		)
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Title:       "< " + opt[0] + " >",
+			Description: rollResultMessage,
+			Color:       0x00ff00, // Green
+			Fields:      fields,
+		}
 	}
 
 	return handlerResult
@@ -440,12 +464,16 @@ func CmdLinkRoll(opt []string, cs *core.Session, md core.MessageData) (handlerRe
 
 	/* Embedメッセージ */
 	if returnMes != "" {
-		handlerResult.Normal.Embed.Description = returnMes
-		handlerResult.Normal.Embed.Color = 0xff0000 // Red
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Description: returnMes,
+			Color:       0xff0000, // Red
+		}
 	} else {
-		handlerResult.Normal.Embed.Title = "< " + opt[0] + " >"
-		handlerResult.Normal.Embed.Description = rollResult.Result
-		handlerResult.Normal.Embed.Color = 0x00ff00 // Green
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Title:       "< " + opt[0] + " >",
+			Description: rollResult.Result,
+			Color:       0x00ff00, // Green
+		}
 	}
 
 	if (err == nil) && (len(opt) > 0) {
@@ -501,7 +529,6 @@ func CmdSecretLinkRoll(opt []string, cs *core.Session, md core.MessageData) (han
 				}
 			}
 		}
-
 	}
 
 	/* 有効にするメッセージタイプ */
@@ -516,12 +543,16 @@ func CmdSecretLinkRoll(opt []string, cs *core.Session, md core.MessageData) (han
 
 	/* Embedメッセージ */
 	if returnMes != "" {
-		handlerResult.Normal.Embed.Description = returnMes
-		handlerResult.Normal.Embed.Color = 0xff0000 // Red
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Description: returnMes,
+			Color:       0xff0000, // Red
+		}
 	} else {
-		handlerResult.Normal.Embed.Title = "< " + opt[0] + " >"
-		handlerResult.Normal.Embed.Description = rollResult.Result
-		handlerResult.Normal.Embed.Color = 0x00ff00 // Green
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Title:       "< " + opt[0] + " >",
+			Description: rollResult.Result,
+			Color:       0x00ff00, // Green
+		}
 	}
 
 	if rollResult.Secret == true {
@@ -532,7 +563,7 @@ func CmdSecretLinkRoll(opt []string, cs *core.Session, md core.MessageData) (han
 		handlerResult.Secret.Content = "**SECRET DICE**"
 
 		/* Embedメッセージ */
-		handlerResult.Secret.Embed = discordgo.MessageEmbed{
+		handlerResult.Secret.Embed = &discordgo.MessageEmbed{
 			Title: "<< SECRET DICE >>",
 			Color: 0x00ff00, // Green
 		}
@@ -614,13 +645,13 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, md core.MessageData) (handl
 
 	/* Embedメッセージ */
 	if returnMes != "" {
-		handlerResult.Normal.Embed.Description = returnMes
-		handlerResult.Normal.Embed.Color = 0xff0000 // Red
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Description: returnMes,
+			Color:       0xff0000, // Red
+		}
 	} else {
-		handlerResult.Normal.Embed.Title = "< SANc >"
-		handlerResult.Normal.Embed.Description = sanRollResult.Result
-		handlerResult.Normal.Embed.Color = 0x00ff00 // Green
-		handlerResult.Normal.Embed.Fields = append(handlerResult.Normal.Embed.Fields,
+		var fields []*discordgo.MessageEmbedField
+		fields = append(fields,
 			&discordgo.MessageEmbedField{
 				Name:   "[ Before ]",
 				Value:  orgSanNum,
@@ -637,8 +668,13 @@ func CmdSanCheckRoll(opt []string, cs *core.Session, md core.MessageData) (handl
 				Inline: true,
 			},
 		)
+		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+			Title:       "< SANc >",
+			Description: sanRollResult.Result,
+			Color:       0x00ff00, // Green
+			Fields:      fields,
+		}
 	}
-	fmt.Println(handlerResult)
 	return handlerResult
 }
 

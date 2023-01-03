@@ -41,4 +41,5 @@ var CmdHandleFuncTable = []CmdHandleFuncStruct{
 // CharacterDataGetFuncTable キャラクターデータ取得関数テーブル
 var CharacterDataGetFuncTable = []CharacterDataGetFuncStruct{
 	{"Cthulhu", "CharacterName", cthulhu.GetCharacterName},
+	{"Cthulhu", "CSheetUrl", cthulhu.GetCharacterSheetUrl},
 }
