@@ -62,13 +62,15 @@ func main() {
 
 // onMessageCreate メッセージ受信時処理
 func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
-	var md core.MessageData
-	md.ChannelID = message.ChannelID
-	md.AuthorID = message.Author.ID
-	md.AuthorName = message.Author.Username
-	md.MessageString = message.Content
+	var md core.MessageData = core.MessageData{
+		ChannelID:     message.ChannelID,
+		MessageID:     message.ID,
+		AuthorID:      message.Author.ID,
+		AuthorName:    message.Author.Username,
+		MessageString: message.Content,
+	}
 
-	var replyObject discordgo.MessageSend
+	//var replyObject discordgo.MessageSend
 
 	log.Printf("%20s %20s > %s\n", md.ChannelID, md.AuthorName, md.MessageString)
 
@@ -78,15 +80,30 @@ func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 			log.Println(handlerResult.Error)
 		}
 
+		ref := discordgo.MessageReference{
+			MessageID: md.MessageID,
+			ChannelID: md.ChannelID,
+		}
+
+		characterName := core.GetCharacterData(md.ChannelID, md.AuthorID, "CharacterName")
+		cSheetUrl := core.GetCharacterData(md.ChannelID, md.AuthorID, "CSheetUrl")
+		if characterName != "" {
+			characterName = "【" + characterName + "】 "
+		}
+
 		/* 通常メッセージの送信 */
 		if handlerResult.Normal.EnableType == core.EnContent {
 			if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
-				replyObject.Content = handlerResult.Normal.Content
-				sendReplyMessage(session, md.ChannelID, md.AuthorID, replyObject)
+				handlerResult.Normal.Content = characterName + handlerResult.Normal.Content
+				session.ChannelMessageSendReply(md.ChannelID, handlerResult.Normal.Content, &ref)
 			}
 		} else if handlerResult.Normal.EnableType == core.EnEmbed {
-			replyObject.Embed = &handlerResult.Normal.Embed
-			sendReplyMessage(session, md.ChannelID, md.AuthorID, replyObject)
+			embedAuthor := &discordgo.MessageEmbedAuthor{
+				Name: characterName,
+				URL:  cSheetUrl,
+			}
+			handlerResult.Normal.Embed.Author = embedAuthor
+			session.ChannelMessageSendEmbedReply(md.ChannelID, handlerResult.Normal.Embed, &ref)
 		} else {
 			/* Non process */
 		}
@@ -94,40 +111,18 @@ func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 		/* シークレットメッセージの送信 */
 		if handlerResult.Secret.EnableType == core.EnContent {
 			if handlerResult.Secret.Content != "" {
-				replyObject.Content = handlerResult.Secret.Content
-				sendReplyMessage(session, core.GetParentIDFromChildID(md.ChannelID), md.AuthorID, replyObject)
+				handlerResult.Secret.Content = characterName + handlerResult.Secret.Content
+				session.ChannelMessageSendReply(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Content, &ref)
 			}
 		} else if handlerResult.Secret.EnableType == core.EnEmbed {
-			replyObject.Embed = &handlerResult.Secret.Embed
-			sendReplyMessage(session, core.GetParentIDFromChildID(md.ChannelID), md.AuthorID, replyObject)
+			embedAuthor := &discordgo.MessageEmbedAuthor{
+				Name: characterName,
+				URL:  cSheetUrl,
+			}
+			handlerResult.Secret.Embed.Author = embedAuthor
+			session.ChannelMessageSendEmbedReply(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Embed, &ref)
 		} else {
 			/* Non process */
 		}
-
 	}
-}
-
-// sendReplyMessage メッセージ返信処理
-func sendReplyMessage(session *discordgo.Session, chID string, to string, message discordgo.MessageSend) {
-	if to == "" {
-		_, err := session.ChannelMessageSendComplex(chID, &message)
-		if err != nil {
-			log.Println(err)
-		}
-	} else {
-		characterName := core.GetCharacterName(chID, to)
-		if characterName != "" {
-			characterName = "【" + characterName + "】"
-		}
-		message.Content = "<@" + to + "> " + characterName + " " + message.Content
-		_, err := session.ChannelMessageSendComplex(chID, &message)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-}
-
-// sendMessage メッセージ送信処理
-func sendMessage(session *discordgo.Session, chID string, message discordgo.MessageSend) {
-	sendReplyMessage(session, chID, "", message)
 }
