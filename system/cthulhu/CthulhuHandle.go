@@ -447,7 +447,7 @@ func CmdLinkRoll(opt []string, cs *core.Session, md core.MessageData) (handlerRe
 		handlerResult.Normal.Embed.Color = 0x00ff00 // Green
 	}
 
-	if err == nil {
+	if (err == nil) && (len(opt) > 0) {
 		//const format = "2006/01/02_15:04:05"
 		//parsedTime, _ := mes.Timestamp.Parse()
 		var cthulhuDiceResultLog DiceResultLogOfCthulhu
