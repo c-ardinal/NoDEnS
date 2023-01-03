@@ -14,10 +14,12 @@ BCDiceがサポートしているシステムであれば利用可能です。
 
 ## 実行に必要なもの
 
-- Go (v1.13.4)
-- Ruby (v2.3.7)
-- [ysakasin/bcdice-api](https://github.com/ysakasin/bcdice-api/tree/0.6.0) (v0.6.0)
+- Go (v1.19.4)
+- Ruby (v3.1)
+- [ysakasin/bcdice-api](https://github.com/ysakasin/bcdice-api/tree/0.9.0) (v2.1.1)
 - [DiscordBotのTokenとID](https://qiita.com/oosawa/items/e5b01e88a209d9087432)
+
+※bcdice-apiはv1を使用します。v2への移行は近々行う予定です。
 
 ## 実行
 
@@ -61,17 +63,17 @@ go build
 |CreateSession |--forced {SYSTEM_NAME}|`CreateSession --forced Cthulhu`|一度生成したセッションを破棄し，再生成します                                 |
 |ConnectSession|{PARENT_CHANNEL_ID}   |`ConnectSession 1234567890`     |CreateSessionで生成したセッションに接続します                               |
 |StoreSession  |-                     |`StoreSession`                  |CreateSessionで生成したセッションをサーバ上に保存します                      |
-|Load{SYSTEM_NAME}Session|-           |`LoadCthulhuSession`            |StoreSessionで保存したセッションを復元します                                |
+|Restore{SYSTEM_NAME}Session|-        |`RestoreCthulhuSession`         |StoreSessionで保存したセッションを復元します                                |
 
 ## Nodens独自にサポートしているCoC用コマンド
 
-|コマンド      |引数                  |使用例                          |説明                                                          |演算機能の可否|演算機能の使用例|
-|:------------:|:--------------------:|:------------------------------:|:----------------------------------------------------------:|:-----------:|:----------------:|
-|regchara      |{CHARASHEET_URL}      |`regchara https://charasheet.vampire-blood.net/123456789abcdef`|キャラシートの情報を取得します  |☓           |-                 |
-|check         |{ABILITY_SKILL_NAME}  |`check 聞き耳`                  |能力値もしくは技能値の初期値・開始値・現在値を確認出来ます        |☓           |-                 |
-|ctrl          |{ABILITY_SKILL_NAME} {VAR_NUM} |`ctrl SAN -1`          |能力値もしくは技能値を加算/減算します                           |○           |`ctrl HP -(1d2+1)`|
-|roll          |{ABILITY_SKILL_NAME}  |`roll 聞き耳`                   |S=5, F=95で1d100を振ります                                    |○            |`roll DEX*5`      |
-|Sroll         |{ABILITY_SKILL_NAME}  |`Sroll 聞き耳`                  |S=5, F=95で1d100のシークレットダイスを振ります                  |○            |`Sroll 聞き耳+20` |
+|コマンド      |引数                  |使用例                          |説明                                                             |演算機能の可否|演算機能の使用例|
+|:------------:|:--------------------:|:------------------------------:|:---------------------------------------------------------------:|:------------:|:----------------:|
+|regchara      |{CHARASHEET_URL}      |`regchara https://charasheet.vampire-blood.net/123456789abcdef`|キャラシートの情報を取得します    |✕            |-                 |
+|check         |{ABILITY_SKILL_NAME}  |`check 聞き耳`                  |能力値もしくは技能値の初期値・開始値・現在値を確認出来ます       |✕            |-                 |
+|ctrl          |{ABILITY_SKILL_NAME} {VAR_NUM} |`ctrl SAN -1`          |能力値もしくは技能値を加算/減算します                            |○            |`ctrl HP -(1d2+1)`|
+|roll          |{ABILITY_SKILL_NAME}  |`roll 聞き耳`                   |S=5, F=95で1d100を振ります                                       |○            |`roll DEX*5`      |
+|Sroll         |{ABILITY_SKILL_NAME}  |`Sroll 聞き耳`                  |S=5, F=95で1d100のシークレットダイスを振ります                   |○            |`Sroll 聞き耳+20` |
 |sanc          |{SUCCESS} {FAIL}      |`sanc 1 1d2`                    |SAN値チェックロールおよびSAN値の加算/減算処理を実施します        |○            |`sanc 1 1d2+1`    |
 
 ## 各システム共通コマンドの使い方
