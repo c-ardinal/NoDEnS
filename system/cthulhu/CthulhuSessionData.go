@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/c-ardinal/Nodens/core"
+	"Nodens/core"
 )
 
 // CharacterOfCthulhu キャラクタ情報構造体
@@ -155,4 +155,9 @@ func AddSkillNum(pc *CharacterOfCthulhu, skill string, add string) string {
 		}
 	}
 	return strconv.Itoa(returnNum)
+}
+
+// GetCharacterName キャラクター名取得
+func GetCharacterName(pc interface{}) string {
+	return pc.(*CharacterOfCthulhu).Personal.Name
 }

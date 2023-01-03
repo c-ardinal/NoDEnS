@@ -47,7 +47,7 @@ func CalcStr2Ans(s string, system string) (result string, err error) {
 	tokens := convStr2Tokens(s)
 	isError, errorCol, errorMes, isContCmd := evalTokens(tokens)
 	if isError == true {
-		err = errors.New("Syntax error [ " + string(errorCol) + ", " + errorMes + " ]")
+		err = errors.New("Syntax error [ " + strconv.Itoa(errorCol) + ", " + errorMes + " ]")
 	} else {
 		if isContCmd {
 			numOnlyTokens, err = convDiceTokens2NumTokens(tokens, system)
@@ -97,8 +97,8 @@ func convStr2Tokens(str string) (result []tokenT) {
 	return result
 }
 
-func evalTokens(tknArray []tokenT) (result bool, errorCol int8, errorMes string, isContCmd bool) {
-	var parenPairNum int8 = 0
+func evalTokens(tknArray []tokenT) (result bool, errorCol int, errorMes string, isContCmd bool) {
+	var parenPairNum int = 0
 
 	errorCol = -1
 	isContCmd = false
@@ -156,7 +156,7 @@ func evalTokens(tknArray []tokenT) (result bool, errorCol int8, errorMes string,
 		}
 
 		if result == true {
-			errorCol = int8(i)
+			errorCol = int(i)
 			errorMes = t.token
 			break
 		}
@@ -164,11 +164,11 @@ func evalTokens(tknArray []tokenT) (result bool, errorCol int8, errorMes string,
 
 	if parenPairNum > 0 {
 		result = true
-		errorCol = int8(len(tknArray))
+		errorCol = int(len(tknArray))
 		errorMes = "Missing ')'"
 	} else if parenPairNum < 0 {
 		result = true
-		errorCol = int8(len(tknArray))
+		errorCol = int(len(tknArray))
 		errorMes = "Missing '('"
 	}
 

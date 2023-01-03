@@ -5,40 +5,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/c-ardinal/Nodens/core"
-	"github.com/c-ardinal/Nodens/system/cthulhu"
+	"Nodens/config"
+	"Nodens/core"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 // configFile デフォルト設定ファイルパス
 var configFile = "SystemConfig.json"
-
-// handleFuncStruct コマンドハンドラテーブル用構造体
-type handleFuncStruct struct {
-	system   string
-	command  string
-	function core.CmdHandleFunc
-}
-
-// handleFuncTable コマンドハンドラテーブル
-var handleFuncTable = []handleFuncStruct{
-	{"General", "ShowVersion", core.CmdShowVersion},       // バージョン情報表示処理
-	{"General", "CreateSession", core.CmdCreateSession},   // 親セッション生成処理
-	{"General", "ConnectSession", core.CmdConnectSession}, // 親セッション連携処理
-	// TODO: あとで実装 {"General", "ExitSession", core.cmdExitSession},		// 親セッション連携処理
-	// TODO: あとで実装 {"General", "RemoveSession", core.cmdRemoveSession},	// セッション削除処理
-	{"General", "StoreSession", core.CmdStoreSession},                        // セッション保存処理
-	{"General", "RestoreCthulhuSession", cthulhu.CmdRestoreSessionOfCthulhu}, // セッション復帰処理
-	{"Cthulhu", "regchara", cthulhu.CmdRegistryCharacter},                    // キャラシート連携処理
-	{"Cthulhu", "check", cthulhu.CmdCharaNumCheck},                           // 能力値確認処理
-	{"Cthulhu", "ctrl", cthulhu.CmdCharaNumControl},                          // 能力値操作処理
-	{"Cthulhu", "roll", cthulhu.CmdLinkRoll},                                 // 能力値ダイスロール処理
-	{"Cthulhu", "Sroll", cthulhu.CmdSecretLinkRoll},                          // 能力値シークレットダイスロール処理
-	{"Cthulhu", "sanc", cthulhu.CmdSanCheckRoll},                             // SAN値チェック処理
-	// TODO: あとで実装 {"Cthulhu", "grow", cmdGrowRoll},    // 成長ロール処理
-	// TODO: 実装中 {"Cthulhu", "showstat", cthulhu.CmdShowStatistics}, // ダイスロール統計表示処理
-}
 
 // main メイン関数
 func main() {
@@ -66,8 +40,13 @@ func main() {
 	discord.AddHandler(onMessageCreate)
 
 	// コマンドハンドラ登録
-	for _, handle := range handleFuncTable {
-		core.AddCmdHandler(handle.system, handle.command, handle.function)
+	for _, handle := range config.CmdHandleFuncTable {
+		core.AddCmdHandler(handle.System, handle.Command, handle.Function)
+	}
+
+	// キャラデータ取得関数登録
+	for _, cdFunc := range config.CharacterDataGetFuncTable {
+		core.AddCharacterDataGetFunc(cdFunc.System, cdFunc.DataName, cdFunc.Function)
 	}
 
 	// セッション開始
@@ -109,7 +88,7 @@ func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 			replyObject.Embed = &handlerResult.Normal.Embed
 			sendReplyMessage(session, md.ChannelID, md.AuthorID, replyObject)
 		} else {
-			/* Non proccess */
+			/* Non process */
 		}
 
 		/* シークレットメッセージの送信 */
@@ -122,7 +101,7 @@ func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 			replyObject.Embed = &handlerResult.Secret.Embed
 			sendReplyMessage(session, core.GetParentIDFromChildID(md.ChannelID), md.AuthorID, replyObject)
 		} else {
-			/* Non proccess */
+			/* Non process */
 		}
 
 	}
@@ -136,7 +115,11 @@ func sendReplyMessage(session *discordgo.Session, chID string, to string, messag
 			log.Println(err)
 		}
 	} else {
-		message.Content = "<@" + to + "> " + message.Content
+		characterName := core.GetCharacterName(chID, to)
+		if characterName != "" {
+			characterName = "【" + characterName + "】"
+		}
+		message.Content = "<@" + to + "> " + characterName + " " + message.Content
 		_, err := session.ChannelMessageSendComplex(chID, &message)
 		if err != nil {
 			log.Println(err)
