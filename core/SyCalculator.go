@@ -40,8 +40,8 @@ var tokensDict = map[string]tokenT{
 	"$$$": {"$$$", ESCAPE, -1, -1},
 }
 
-//CalcStr2Ans 文字列として受け取った計算式を計算し，計算結果を文字列として返す
-func CalcStr2Ans(s string, system string) (result string, err error) {
+// CalcStr2Ans 文字列として受け取った計算式を計算し，計算結果を文字列として返す
+func CalcStr2Ans(s string, system string) (result string, numOnlyFormula string, err error) {
 	var numOnlyTokens []tokenT
 	err = nil
 	tokens := convStr2Tokens(s)
@@ -52,7 +52,10 @@ func CalcStr2Ans(s string, system string) (result string, err error) {
 		if isContCmd {
 			numOnlyTokens, err = convDiceTokens2NumTokens(tokens, system)
 			if err != nil {
-				return "0", err
+				return "0", "0", err
+			}
+			for _, s := range numOnlyTokens {
+				numOnlyFormula += s.token
 			}
 		} else {
 			numOnlyTokens = tokens
@@ -60,8 +63,7 @@ func CalcStr2Ans(s string, system string) (result string, err error) {
 		syConvedTokens := convTokens2ShuntingYardTokens(numOnlyTokens)
 		result, err = calFromTokens(syConvedTokens)
 	}
-
-	return result, err
+	return result, numOnlyFormula, err
 }
 
 func convStr2Tokens(str string) (result []tokenT) {
