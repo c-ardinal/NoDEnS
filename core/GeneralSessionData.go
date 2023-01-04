@@ -124,11 +124,20 @@ func GetCharacterData(chID string, plID string, dataName string) string {
 		cdGetFunc := GetCharacterDataGetFunc((*ts).Scenario.System, dataName)
 		if cdGetFunc != nil {
 			_, pcExist := (*ts).Pc[plID]
-			_, npcExist := (*ts).Npc[plID]
 			if pcExist == true {
 				result = cdGetFunc((*ts).Pc[plID])
-			} else if npcExist == true {
-				result = cdGetFunc((*ts).Npc[plID])
+			}
+		}
+	} else {
+		parentId := GetParentIDFromChildID(chID)
+		if parentId != "" {
+			tsParent, _ := trpgSession[parentId]
+			cdGetFunc := GetCharacterDataGetFunc((*tsParent).Scenario.System, dataName)
+			if cdGetFunc != nil {
+				_, npcExist := (*tsParent).Npc[plID]
+				if npcExist == true {
+					result = cdGetFunc((*tsParent).Npc[plID])
+				}
 			}
 		}
 	}
