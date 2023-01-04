@@ -1,7 +1,6 @@
 package cthulhu
 
 import (
-	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
@@ -31,58 +30,6 @@ type DiceStatisticsOfCthulhu struct {
 
 // DiceResultLogOfCthulhus ダイスロール実行ログ格納変数
 var DiceResultLogOfCthulhus = []DiceResultLogOfCthulhu{}
-
-// CmdRestoreSessionOfCthulhu クトゥルフのセッションを復元する
-func CmdRestoreSessionOfCthulhu(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
-	var returnMes string
-	var returnMesColor int
-
-	err := core.RestoreSession(md.ChannelID)
-	if err != nil {
-		returnMes = "Session load failed."
-		returnMesColor = 0xff0000 // Red
-		handlerResult.Error = err
-	} else {
-		ses := core.GetSessionByID(md.ChannelID)
-
-		/* PC情報を一度JSONに戻してからクトゥルフ用PC構造体に変換する */
-		pcsRawData, _ := json.Marshal((*ses).Pc)
-		var pcsMap = map[string]*CharacterOfCthulhu{}
-		json.Unmarshal(pcsRawData, &pcsMap)
-
-		/* NPC情報を一度JSONに戻してからクトゥルフ用NPC構造体に変換する */
-		npcsRawData, _ := json.Marshal((*ses).Npc)
-		var npcsMap = map[string]*CharacterOfCthulhu{}
-		json.Unmarshal(npcsRawData, &npcsMap)
-
-		/* PC情報を格納 */
-		for _, pcData := range pcsMap {
-			(*ses).Pc[pcData.Player.ID] = pcData
-		}
-
-		/* NPC情報を格納 */
-		for _, npcData := range npcsMap {
-			(*ses).Npc[npcData.Player.ID] = npcData
-		}
-
-		returnMes = "Session restore successfully."
-		returnMesColor = 0x00ff00 // Green
-	}
-
-	/* 有効にするメッセージタイプ */
-	handlerResult.Normal.EnableType = core.EnEmbed
-
-	/* テキストメッセージ */
-	handlerResult.Normal.Content = returnMes
-
-	/* Embedメッセージ */
-	handlerResult.Normal.Embed = &discordgo.MessageEmbed{
-		Description: returnMes,
-		Color:       returnMesColor,
-	}
-
-	return handlerResult
-}
 
 // CmdRegistryCharacter キャラシ連携ハンドラ
 func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {

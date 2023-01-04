@@ -49,6 +49,9 @@ func main() {
 		core.AddCharacterDataGetFunc(cdFunc.System, cdFunc.DataName, cdFunc.Function)
 	}
 
+	// セッション復元関数登録
+	core.SetRestoreFunc(config.SessionRestoreFuncTable)
+
 	// セッション開始
 	err = discord.Open()
 	if err != nil {

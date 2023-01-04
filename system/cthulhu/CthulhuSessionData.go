@@ -1,6 +1,7 @@
 package cthulhu
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -166,4 +167,27 @@ func GetCharacterName(pc interface{}) string {
 // GetCharacterName キャラクター名取得
 func GetCharacterSheetUrl(pc interface{}) string {
 	return pc.(*CharacterOfCthulhu).URL
+}
+
+// JobRestoreSession セッション復元処理(システム固有部)
+func JobRestoreSession(ses *core.Session) bool {
+	/* PC情報を一度JSONに戻してからクトゥルフ用PC構造体に変換する */
+	pcsRawData, _ := json.Marshal((*ses).Pc)
+	var pcsMap = map[string]*CharacterOfCthulhu{}
+	json.Unmarshal(pcsRawData, &pcsMap)
+
+	/* NPC情報を一度JSONに戻してからクトゥルフ用NPC構造体に変換する */
+	npcsRawData, _ := json.Marshal((*ses).Npc)
+	var npcsMap = map[string]*CharacterOfCthulhu{}
+	json.Unmarshal(npcsRawData, &npcsMap)
+
+	/* PC情報を格納 */
+	for _, pcData := range pcsMap {
+		(*ses).Pc[pcData.Player.ID] = pcData
+	}
+	/* NPC情報を格納 */
+	for _, npcData := range npcsMap {
+		(*ses).Npc[npcData.Player.ID] = npcData
+	}
+	return true
 }

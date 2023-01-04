@@ -52,12 +52,20 @@ func (f CmdHandleFunc) ExecuteCmd(opts []string, cs *Session, md MessageData) (h
 	return f(opts, cs, md)
 }
 
-// CharacterDataGetFunc コマンドハンドラ型
+// CharacterDataGetFunc キャラデータ取得関数型
 type CharacterDataGetFunc func(cd interface{}) string
 
 // ExecuteCharacterDataGet CharacterDataGetFunc実行処理
 func (f CharacterDataGetFunc) ExecuteCharacterDataGet(cd interface{}) string {
 	return f(cd)
+}
+
+// SessionRestoreFunc セッション復元関数型
+type SessionRestoreFunc func(ses *Session) bool
+
+// ExecuteSessionRestore SessionRestoreFunc実行処理
+func (f SessionRestoreFunc) ExecuteSessionRestore(ses *Session) bool {
+	return f(ses)
 }
 
 // diceResultLogs ダイスロール実行ログ格納変数
@@ -68,6 +76,9 @@ var cmdHandleMap = map[string]map[string]CmdHandleFunc{}
 
 // cdGetFuncMap キャラデータ取得関数群登録用マップ
 var cdGetFuncMap = map[string]map[string]CharacterDataGetFunc{}
+
+// SessionRestoreFuncTable セッション復元関数群登録用マップ
+var SessionRestoreFuncTable = map[string]SessionRestoreFunc{}
 
 // AddCmdHandler コマンドハンドラ登録処理
 func AddCmdHandler(system string, cmd string, handler CmdHandleFunc) {
@@ -173,6 +184,11 @@ func AddCharacterDataGetFunc(system string, dataName string, getFunc CharacterDa
 		cdGetFuncMap[system] = make(map[string]CharacterDataGetFunc)
 	}
 	cdGetFuncMap[system][dataName] = getFunc
+}
+
+// SetRestoreFunc セッション復元関数群登録処理
+func SetRestoreFunc(funcmap map[string]SessionRestoreFunc) {
+	SessionRestoreFuncTable = funcmap
 }
 
 // GetCharacterDataGetFuncキャラデータ取得関数登録処理
