@@ -1,6 +1,8 @@
 package core
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+)
 
 // CmdShowVersion バージョン情報確認ハンドラ
 func CmdShowVersion(opt []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
@@ -174,5 +176,39 @@ func CmdStoreSession(opt []string, cs *Session, md MessageData) (handlerResult H
 	return handlerResult
 }
 
-// CmdLoadSession セッション復帰ハンドラ
-//coreパッケージからPC・NPC情報の構造復元が出来ないため，システム側で実装する
+// CmdRestoreSession セッション復元ハンドラ
+func CmdRestoreSession(opt []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
+	var returnMes string
+	var returnMesColor int
+
+	// 各システム共通情報の復元
+	err := RestoreSession(md.ChannelID)
+	if err != nil {
+		returnMes = "Session load failed."
+		returnMesColor = 0xff0000 // Red
+		handlerResult.Error = err
+	} else {
+		// 各システム固有情報の復元
+		ses := GetSessionByID(md.ChannelID)
+		systemRestoreFunc, isExist := SessionRestoreFuncTable[(*ses).Scenario.System]
+		if isExist == true {
+			systemRestoreFunc.ExecuteSessionRestore(ses)
+		}
+		returnMes = "Session restore successfully."
+		returnMesColor = 0x00ff00 // Green
+	}
+
+	/* 有効にするメッセージタイプ */
+	handlerResult.Normal.EnableType = EnEmbed
+
+	/* テキストメッセージ */
+	handlerResult.Normal.Content = returnMes
+
+	/* Embedメッセージ */
+	handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+		Description: returnMes,
+		Color:       returnMesColor,
+	}
+
+	return handlerResult
+}
