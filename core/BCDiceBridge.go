@@ -18,8 +18,9 @@ type BCDiceVersionResult struct {
 
 // ExecuteVersionCheck BCDiceバージョン情報取得処理
 func ExecuteVersionCheck(endpoint string) (vr BCDiceVersionResult, err error) {
-	resp, err := http.Get(endpoint + "/version")
-	log.Printf("\"%s\"", endpoint)
+	urlStr := endpoint + "/version"
+	resp, err := http.Get(urlStr)
+	log.Printf("\"[URL]: %s\"", urlStr)
 	if err != nil {
 		log.Println(err)
 		return vr, err
@@ -34,13 +35,21 @@ func ExecuteVersionCheck(endpoint string) (vr BCDiceVersionResult, err error) {
 
 // BCDiceSystemsResult BCDiceシステム一覧取得結果格納構造体
 type BCDiceSystemsResult struct {
-	Systems []string `json:"systems"`
+	Systems []BCDiceSystem `json:"systems"`
+}
+
+// BCDiceSystem BCDiceシステム情報格納構造体
+type BCDiceSystem struct {
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	SortKey string `json:"sort_key"`
 }
 
 // ExecuteGetSystems BCDiceシステム一覧取得
 func ExecuteGetSystems(endpoint string) (sr BCDiceSystemsResult, err error) {
-	resp, err := http.Get(endpoint + "/systems")
-	log.Printf("\"%s\"", endpoint)
+	urlStr := endpoint + "/game_system"
+	resp, err := http.Get(urlStr)
+	log.Printf("\"[URL]: %s\"", urlStr)
 	if err != nil {
 		log.Println(err)
 		return sr, err
@@ -58,7 +67,7 @@ func CheckContainsSystem(endpoint string, system string) (result bool) {
 	systemsList, err := ExecuteGetSystems(endpoint)
 	if err == nil {
 		for _, sys := range systemsList.Systems {
-			if strings.ToLower(sys) == strings.ToLower(system) {
+			if strings.ToLower(sys.Name) == strings.ToLower(system) {
 				return true
 			}
 		}
@@ -69,16 +78,21 @@ func CheckContainsSystem(endpoint string, system string) (result bool) {
 
 // BCDiceRollResult ダイスロール実行結果格納構造体
 type BCDiceRollResult struct {
-	Ok     bool   `json:"ok"`
-	Result string `json:"result"`
-	Secret bool   `json:"secret"`
-	Dices  []Dice `json:"dices"`
+	Ok       bool   `json:"ok"`
+	Result   string `json:"text"`
+	Secret   bool   `json:"secret"`
+	Success  bool   `json:"success"`
+	Failure  bool   `json:"failure"`
+	Critical bool   `json:"critical"`
+	Fumble   bool   `json:"fumble"`
+	Dices    []Dice `json:"rands"`
 }
 
 // Dice ダイス情報格納構造体
 type Dice struct {
-	Faces int `json:"faces"`
-	Value int `json:"value"`
+	Kind  string `json:"kind"`
+	Faces int    `json:"sides"`
+	Value int    `json:"value"`
 }
 
 // ExecuteDiceRollAndCalc ダイスロール+演算実行
@@ -101,7 +115,8 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 	if isCalcMutch {
 		/* 計算式が含まれていた場合 */
 		var calAnswer string
-		calAnswer, err = CalcStr2Ans(diceCalcStr, system)
+		var workingFormula string
+		calAnswer, workingFormula, err = CalcStr2Ans(diceCalcStr, system)
 		if err != nil {
 			return rr, err
 		}
@@ -110,13 +125,29 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 			strIntegDiceCmd := splitedStrArray[0] + calAnswer
 			rrtmp, err = ExecuteDiceRoll(endpoint, system, strIntegDiceCmd)
 			rr.Ok = rrtmp.Ok
-			rr.Result = "calc(" + dice + ") ＞ " + rrtmp.Result
+			if "" != workingFormula {
+				rr.Result = "calc(" + dice + ") \n＞ calc(" + workingFormula + ") \n＞ " + strings.Replace(rrtmp.Result, "＞", "\n＞", -1)
+			} else {
+				rr.Result = "calc(" + dice + ") \n＞ " + strings.Replace(rrtmp.Result, "＞", "\n＞", -1)
+			}
 			rr.Secret = rrtmp.Secret
+			rr.Success = rrtmp.Success
+			rr.Failure = rrtmp.Failure
+			rr.Critical = rrtmp.Critical
+			rr.Fumble = rrtmp.Fumble
 			rr.Dices = rrtmp.Dices
 		} else {
 			rr.Ok = true
-			rr.Result = "calc(" + dice + ") ＞ " + calAnswer
+			if "" != workingFormula {
+				rr.Result = "calc(" + dice + ") \n＞ calc(" + workingFormula + ") \n＞ " + strings.Replace(calAnswer, "＞", "\n＞", -1)
+			} else {
+				rr.Result = "calc(" + dice + ") \n＞ " + strings.Replace(calAnswer, "＞", "\n＞", -1)
+			}
 			rr.Secret = false
+			rr.Success = false
+			rr.Failure = false
+			rr.Critical = false
+			rr.Fumble = false
 			rr.Dices = make([]Dice, 1)
 			rr.Dices[0].Value, _ = strconv.Atoi(calAnswer)
 		}
@@ -124,6 +155,7 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 	} else {
 		/* 計算式が含まれていなかった場合 */
 		rr, _ = ExecuteDiceRoll(endpoint, system, dice)
+		rr.Result = strings.Replace(rr.Result, "＞", "\n＞", -1)
 	}
 
 	return rr, err
@@ -131,8 +163,9 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 
 // ExecuteDiceRoll ダイスロール実行
 func ExecuteDiceRoll(endpoint string, system string, dice string) (rr BCDiceRollResult, err error) {
-	resp, err := http.Get(endpoint + "/diceroll?system=" + system + "&command=" + url.QueryEscape(dice))
-	log.Printf("\"%s\"", endpoint)
+	urlStr := endpoint + "/game_system/" + system + "/roll?command=" + url.QueryEscape(dice)
+	resp, err := http.Get(urlStr)
+	log.Printf("\"[URL]: %s\"", urlStr)
 	if err != nil {
 		log.Println(err)
 		return rr, err
@@ -142,6 +175,7 @@ func ExecuteDiceRoll(endpoint string, system string, dice string) (rr BCDiceRoll
 		log.Println(err)
 		return rr, err
 	}
+	log.Println(rr)
 	return rr, nil
 }
 

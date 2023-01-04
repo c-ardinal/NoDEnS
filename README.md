@@ -19,7 +19,7 @@ BCDiceがサポートしているシステムであれば利用可能です。
 - [ysakasin/bcdice-api](https://github.com/ysakasin/bcdice-api/tree/0.9.0) (v2.1.1)
 - [DiscordBotのTokenとID](https://qiita.com/oosawa/items/e5b01e88a209d9087432)
 
-※bcdice-apiはv1を使用します。v2への移行は近々行う予定です。
+※bcdice-apiはAPIバージョンv2を使用します(v1は非サポート)。
 
 ## 実行
 
