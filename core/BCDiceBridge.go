@@ -35,7 +35,7 @@ func ExecuteVersionCheck(endpoint string) (vr BCDiceVersionResult, err error) {
 
 // BCDiceSystemsResult BCDiceシステム一覧取得結果格納構造体
 type BCDiceSystemsResult struct {
-	Systems []BCDiceSystem `json:"systems"`
+	Systems []BCDiceSystem `json:"game_system"`
 }
 
 // BCDiceSystem BCDiceシステム情報格納構造体
@@ -67,7 +67,7 @@ func CheckContainsSystem(endpoint string, system string) (result bool) {
 	systemsList, err := ExecuteGetSystems(endpoint)
 	if err == nil {
 		for _, sys := range systemsList.Systems {
-			if strings.ToLower(sys.Name) == strings.ToLower(system) {
+			if strings.ToLower(sys.Id) == strings.ToLower(system) {
 				return true
 			}
 		}
