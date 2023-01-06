@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/signal"
 
 	"Nodens/config"
 	"Nodens/core"
@@ -36,8 +37,14 @@ func main() {
 
 	// Discordのメッセージハンドラ登録
 	discord.AddHandler(onMessageCreate)
+	discord.AddHandler(onInteractionCreate)
 
-	// コマンドハンドラ登録
+	// スラッシュコマンドハンドラ登録
+	for _, handle := range config.SlashCmdHandleFuncTable {
+		core.AddSlashCmdHandler(handle.System, handle.Command, handle.Function)
+	}
+
+	// テキストコマンドハンドラ登録
 	for _, handle := range config.CmdHandleFuncTable {
 		core.AddCmdHandler(handle.System, handle.Command, handle.Function)
 	}
@@ -53,11 +60,37 @@ func main() {
 	// セッション開始
 	err = discord.Open()
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
-	log.Println("Listening...")
-	stopBot := make(chan bool)
+
+	// 共通スラッシュコマンドを登録
+	for _, slashCmd := range config.SlashCmdHandleFuncTable {
+		if slashCmd.System == "General" {
+			cmd, err := discord.ApplicationCommandCreate(discord.State.User.ID, core.GetConfig().GuildId, &slashCmd.SlashCommandData)
+			if err != nil {
+				log.Panicf("[Error]: Cannot register '%v' command: %v", cmd, err)
+			}
+			log.Printf("[Event]: Command registered '%v'", cmd.Name)
+		}
+	}
+
+	// イベントをリッスン
+	log.Println("[Event]: Listening...")
+	stopBot := make(chan os.Signal, 1)
+	signal.Notify(stopBot, os.Interrupt)
 	<-stopBot
+
+	// スラッシュコマンドを全て削除
+	registeredCommandList, err := discord.ApplicationCommands(discord.State.User.ID, "")
+	if err == nil {
+		for _, appCommand := range registeredCommandList {
+			err := discord.ApplicationCommandDelete(discord.State.User.ID, "", appCommand.ID)
+			if err != nil {
+				log.Panicf("[Error]: Cannot delete '%v' command: %v", appCommand.Name, err)
+			}
+			log.Printf("[Event]: Command deleted '%v'", appCommand.Name)
+		}
+	}
 	return
 }
 
@@ -124,5 +157,65 @@ func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 		} else {
 			/* Non process */
 		}
+	}
+}
+
+// onInteractionCreate インタラクション受診時処理
+func onInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	// インタラクション送信者情報取得
+	var interactionUser *discordgo.User
+	if interaction.User != nil {
+		interactionUser = interaction.User
+	} else if interaction.Member != nil {
+		interactionUser = interaction.Member.User
+	}
+
+	// スラッシュコマンド情報取得
+	var options []core.CommandOption
+	appCommandData := interaction.Interaction.ApplicationCommandData()
+	for _, opt := range appCommandData.Options {
+		options = append(options, core.CommandOption{
+			Name:  opt.Name,
+			Value: opt.StringValue(),
+		})
+	}
+
+	// 受信メッセージデータを構築
+	var md core.MessageData = core.MessageData{
+		ChannelID:     interaction.ChannelID,
+		MessageID:     interaction.ID,
+		AuthorID:      interactionUser.ID,
+		AuthorName:    interactionUser.Username,
+		MessageString: "",
+		Command:       appCommandData.Name,
+		Options:       options,
+	}
+
+	// コマンド処理実行
+	handlerResult := core.ExecuteSlashCmdHandler(md)
+	if handlerResult.Error != nil {
+		log.Printf("[Error]: %v", handlerResult.Error)
+	}
+
+	/* 通常メッセージの送信 */
+	if handlerResult.Normal.EnableType == core.EnContent {
+		if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
+			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: handlerResult.Normal.Content,
+				},
+			})
+		}
+	} else if handlerResult.Normal.EnableType == core.EnEmbed {
+		session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Embeds: []*discordgo.MessageEmbed{handlerResult.Normal.Embed},
+			},
+		})
+		/* インタラクションをトリガとするシークレットリプライは必要が無いため実装なし */
+	} else {
+		/* Non process */
 	}
 }

@@ -81,7 +81,10 @@ func (f SessionRestoreFunc) ExecuteSessionRestore(ses *Session) bool {
 // diceResultLogs ダイスロール実行ログ格納変数
 var diceResultLogs = []DiceResultLog{}
 
-// cmdHandleMap コマンドハンドル群登録用マップ
+// slashCmdHandleMap スラッシュコマンドハンドル群登録用マップ
+var slashCmdHandleMap = map[string]map[string]CmdHandleFunc{}
+
+// cmdHandleMap テキストコマンドハンドル群登録用マップ
 var cmdHandleMap = map[string]map[string]CmdHandleFunc{}
 
 // cdGetFuncMap キャラデータ取得関数群登録用マップ
@@ -90,7 +93,22 @@ var cdGetFuncMap = map[string]map[string]CharacterDataGetFunc{}
 // SessionRestoreFuncTable セッション復元関数群登録用マップ
 var SessionRestoreFuncTable = map[string]SessionRestoreFunc{}
 
-// AddCmdHandler コマンドハンドラ登録処理
+// AddSlashCmdHandler スラッシュコマンドハンドラ登録処理
+func AddSlashCmdHandler(system string, cmd string, handler CmdHandleFunc) {
+	if slashCmdHandleMap[system] == nil {
+		slashCmdHandleMap[system] = make(map[string]CmdHandleFunc)
+	}
+	slashCmdHandleMap[system][cmd] = handler
+}
+
+// ExecuteCmdHandler スラッシュコマンドハンドラ実行処理
+func ExecuteSlashCmdHandler(md MessageData) (handlerResult HandlerResult) {
+	log.Printf("[Event]: Execute slash command handler '%v'", md)
+	handlerResult = executeCmdHandlerGeneral(md, slashCmdHandleMap)
+	return handlerResult
+}
+
+// AddCmdHandler テキストコマンドハンドラ登録処理
 func AddCmdHandler(system string, cmd string, handler CmdHandleFunc) {
 	if cmdHandleMap[system] == nil {
 		cmdHandleMap[system] = make(map[string]CmdHandleFunc)
@@ -118,48 +136,49 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 
 // executeCmdHandlerGeneral コマンドハンドラ共通処理
 func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]CmdHandleFunc) (handlerResult HandlerResult) {
-		/* DiscordのチャネルIDからセッション情報を取得 */
+	/* DiscordのチャネルIDからセッション情報を取得 */
 	var targetID string = ""
-		if GetParentIDFromChildID(md.ChannelID) != "" {
-			targetID = GetParentIDFromChildID(md.ChannelID)
-		} else {
-			targetID = md.ChannelID
-		}
-		cs := GetSessionByID(targetID)
+	if GetParentIDFromChildID(md.ChannelID) != "" {
+		targetID = GetParentIDFromChildID(md.ChannelID)
+	} else {
+		targetID = md.ChannelID
+	}
+	cs := GetSessionByID(targetID)
 
-		/* コマンド部をもとにコール対象の関数ポインタを取得 */
+	/* コマンド部をもとにコール対象の関数ポインタを取得 */
 	var system string = ""
-		if cs != nil {
+	if cs != nil {
 		system = cs.Scenario.System
-		}
+	}
 
 	if fg, exist := handleMap["General"][md.Command]; exist == true {
-			/* 共通コマンドコール処理 */
+		/* 共通コマンドコール処理 */
 		log.Printf("[Event]: Command call '%v'", md.Command)
 		handlerResult = fg.ExecuteCmd(cs, md)
 	} else if fs, exist := handleMap[system][md.Command]; exist == true {
-			/* 各システム用コマンドコール処理 */
+		/* 各システム用コマンドコール処理 */
 		log.Printf("[Event]: Command call '%v'", md.Command)
 		handlerResult = fs.ExecuteCmd(cs, md)
-		} else {
-			/* セッションが生成されている場合のみダイスロールを実行 */
-			if CheckExistSession(targetID) {
+	} else {
+		/* セッションが生成されている場合のみダイスロールを実行 */
+		if CheckExistSession(targetID) {
+			var rollResult BCDiceRollResult
+			log.Printf("[Event]: Execute dice roll '%v'", md.MessageString)
+			rollResult, handlerResult.Error = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, md.MessageString)
+			if handlerResult.Error != nil {
 				/* 有効にするメッセージタイプ */
 				handlerResult.Normal.EnableType = EnEmbed
-				handlerResult.Secret.EnableType = EnEmbed
-
-				var rollResult BCDiceRollResult
-			log.Printf("[Event]: Execute dice roll '%v'", md.MessageString)
-				rollResult, handlerResult.Error = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, md.MessageString)
-				if handlerResult.Error != nil {
-					/* テキストメッセージ */
-					handlerResult.Normal.Content = "Error: " + handlerResult.Error.Error()
-					/* Embedメッセージ */
-					handlerResult.Normal.Embed = &discordgo.MessageEmbed{
-						Description: handlerResult.Normal.Content,
-						Color:       0xff0000, // Red
-					}
-				} else {
+				/* テキストメッセージ */
+				handlerResult.Normal.Content = "Error: Dice roll failed > " + handlerResult.Error.Error()
+				/* Embedメッセージ */
+				handlerResult.Normal.Embed = &discordgo.MessageEmbed{
+					Description: handlerResult.Normal.Content,
+					Color:       0xff0000, // Red
+				}
+			} else {
+				if rollResult.Result != "" {
+					/* 有効にするメッセージタイプ */
+					handlerResult.Normal.EnableType = EnEmbed
 					/* テキストメッセージ */
 					handlerResult.Normal.Content = rollResult.Result
 					/* Embedメッセージ */
@@ -168,31 +187,34 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 						Color:       0x00ff00, // Green
 					}
 				}
+			}
 
-				if rollResult.Secret == true {
-					/* シークレットダイスが振られた旨のメッセージ */
-					/* テキストメッセージ */
-					handlerResult.Secret.Content = "**SECRET DICE**"
-					/* Embedメッセージ */
-					handlerResult.Secret.Embed = &discordgo.MessageEmbed{
-						Title: "SECRET DICE",
-						Color: 0xffff00, // Yellow
-					}
-				} else {
-					/* シークレットダイス以外の実行結果を記録 */
-					//const format = "2006/01/02_15:04:05"
-					//parsedTime, _ := mes.Timestamp.Parse()
-					var diceResultLog DiceResultLog
-
-					diceResultLog.Player.ID = md.AuthorID
-					diceResultLog.Player.Name = md.AuthorName
-					//diceResultLog.Time = parsedTime.Format(format)
-					diceResultLog.Command = md.MessageString
-					diceResultLog.Result = handlerResult.Normal.Content
-					diceResultLogs = append(diceResultLogs, diceResultLog)
+			if rollResult.Secret == true {
+				/* シークレットダイスが振られた旨のメッセージ */
+				/* 有効にするメッセージタイプ */
+				handlerResult.Secret.EnableType = EnEmbed
+				/* テキストメッセージ */
+				handlerResult.Secret.Content = "**SECRET DICE**"
+				/* Embedメッセージ */
+				handlerResult.Secret.Embed = &discordgo.MessageEmbed{
+					Title: "SECRET DICE",
+					Color: 0xffff00, // Yellow
 				}
+			} else {
+				/* シークレットダイス以外の実行結果を記録 */
+				//const format = "2006/01/02_15:04:05"
+				//parsedTime, _ := mes.Timestamp.Parse()
+				var diceResultLog DiceResultLog
+
+				diceResultLog.Player.ID = md.AuthorID
+				diceResultLog.Player.Name = md.AuthorName
+				//diceResultLog.Time = parsedTime.Format(format)
+				diceResultLog.Command = md.MessageString
+				diceResultLog.Result = handlerResult.Normal.Content
+				diceResultLogs = append(diceResultLogs, diceResultLog)
 			}
 		}
+	}
 	return handlerResult
 }
 
