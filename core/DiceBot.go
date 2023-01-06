@@ -1,7 +1,9 @@
 package core
 
 import (
+	"log"
 	"regexp"
+	"strconv"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -45,11 +47,11 @@ const (
 )
 
 // CmdHandleFunc コマンドハンドラ型
-type CmdHandleFunc func(opts []string, cs *Session, md MessageData) (handlerResult HandlerResult)
+type CmdHandleFunc func(cs *Session, md MessageData) (handlerResult HandlerResult)
 
 // ExecuteCmd CmdHandleFunc実行処理
-func (f CmdHandleFunc) ExecuteCmd(opts []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
-	return f(opts, cs, md)
+func (f CmdHandleFunc) ExecuteCmd(cs *Session, md MessageData) (handlerResult HandlerResult) {
+	return f(cs, md)
 }
 
 // CharacterDataGetFunc キャラデータ取得関数型
@@ -90,12 +92,26 @@ func AddCmdHandler(system string, cmd string, handler CmdHandleFunc) {
 
 // ExecuteCmdHandler コマンドハンドラ実行処理
 func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
-	handlerResult.Normal.Content = md.MessageString
-
+	log.Printf("[Event]: Execute text command handler '%v'", md)
 	commandRegex := regexp.MustCompile("[^ ]+")
 	if commandRegex.MatchString(md.MessageString) {
-		var targetID string
+		/* コマンド部と引数部を分解 */
+		md.Command = commandRegex.FindAllString(md.MessageString, -1)[0]
+		for i, str := range commandRegex.FindAllString(md.MessageString, -1)[1:] {
+			md.Options = append(md.Options, CommandOption{
+				Name:  strconv.Itoa(i),
+				Value: str,
+			})
+		}
+		handlerResult = executeCmdHandlerGeneral(md, cmdHandleMap)
+	}
+	return handlerResult
+}
+
+// executeCmdHandlerGeneral コマンドハンドラ共通処理
+func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]CmdHandleFunc) (handlerResult HandlerResult) {
 		/* DiscordのチャネルIDからセッション情報を取得 */
+	var targetID string = ""
 		if GetParentIDFromChildID(md.ChannelID) != "" {
 			targetID = GetParentIDFromChildID(md.ChannelID)
 		} else {
@@ -103,25 +119,20 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 		}
 		cs := GetSessionByID(targetID)
 
-		/* コマンド部と引数部を分解 */
-		cmd := commandRegex.FindAllString(md.MessageString, -1)[0]
-		opts := commandRegex.FindAllString(md.MessageString, -1)[1:]
-
 		/* コマンド部をもとにコール対象の関数ポインタを取得 */
-		var fs CmdHandleFunc
-		var isSysExist bool
+	var system string = ""
 		if cs != nil {
-			system := cs.Scenario.System
-			fs, isSysExist = cmdHandleMap[system][cmd]
+		system = cs.Scenario.System
 		}
-		fg, isGenExist := cmdHandleMap["General"][cmd]
 
-		if isGenExist == true {
+	if fg, exist := handleMap["General"][md.Command]; exist == true {
 			/* 共通コマンドコール処理 */
-			handlerResult = fg.ExecuteCmd(opts, cs, md)
-		} else if isSysExist == true {
+		log.Printf("[Event]: Command call '%v'", md.Command)
+		handlerResult = fg.ExecuteCmd(cs, md)
+	} else if fs, exist := handleMap[system][md.Command]; exist == true {
 			/* 各システム用コマンドコール処理 */
-			handlerResult = fs.ExecuteCmd(opts, cs, md)
+		log.Printf("[Event]: Command call '%v'", md.Command)
+		handlerResult = fs.ExecuteCmd(cs, md)
 		} else {
 			/* セッションが生成されている場合のみダイスロールを実行 */
 			if CheckExistSession(targetID) {
@@ -174,8 +185,6 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 				}
 			}
 		}
-	}
-
 	return handlerResult
 }
 
@@ -195,10 +204,8 @@ func SetRestoreFunc(funcmap map[string]SessionRestoreFunc) {
 // GetCharacterDataGetFuncキャラデータ取得関数登録処理
 func GetCharacterDataGetFunc(system string, dataName string) CharacterDataGetFunc {
 	var result CharacterDataGetFunc = nil
-	_, systemExist := cdGetFuncMap[system]
-	if systemExist == true {
-		_, dnExist := cdGetFuncMap[system][dataName]
-		if dnExist == true {
+	if _, exist := cdGetFuncMap[system]; exist == true {
+		if _, exist := cdGetFuncMap[system][dataName]; exist == true {
 			result = cdGetFuncMap[system][dataName]
 		}
 	}

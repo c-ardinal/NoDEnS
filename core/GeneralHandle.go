@@ -5,7 +5,7 @@ import (
 )
 
 // CmdShowVersion バージョン情報確認ハンドラ
-func CmdShowVersion(opt []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
+func CmdShowVersion(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var returnMes string
 	var returnMesColor int
 
@@ -39,45 +39,66 @@ func CmdShowVersion(opt []string, cs *Session, md MessageData) (handlerResult Ha
 }
 
 // CmdCreateSession 親セッション生成ハンドラ
-func CmdCreateSession(opt []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
+func CmdCreateSession(cs *Session, md MessageData) (handlerResult HandlerResult) {
+	var forced string
+	var system string
 	var returnMes string
 	var returnMesColor int
 
-	option := string(opt[0])
-	if option == "--forced" {
-		sys := string(opt[1])
-		isContains := CheckContainsSystem(GetConfig().EndPoint, sys)
-		if sys != "" && isContains == true {
-			if CheckExistSession(md.ChannelID) == true {
-				/* セッションの強制再生成実行 */
-				RemoveSession(md.ChannelID)
-				cs = NewSession(md.ChannelID, sys, md.AuthorName, md.AuthorID)
-				returnMes = "Session recreate successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-				returnMesColor = 0x00ff00 // Green
+	for _, opt := range md.Options {
+		if opt.Name == "forced" {
+			forced = opt.Value
+		} else {
+			if opt.Value != "OtherSystem" {
+				system = opt.Value
+			}
+		}
+	}
+
+	if forced != "" {
+		isContains := CheckContainsSystem(GetConfig().EndPoint, system)
+		if system != "" {
+			if isContains == true {
+				if CheckExistSession(md.ChannelID) == true {
+					/* セッションの強制再生成実行 */
+					RemoveSession(md.ChannelID)
+					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
+					returnMes = "Session recreate successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
+					returnMesColor = 0x00ff00 // Green
+				} else {
+					/* セッションを生成 */
+					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
+					returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
+					returnMesColor = 0x00ff00 // Green
+				}
 			} else {
-				/* セッションを生成 */
-				cs = NewSession(md.ChannelID, sys, md.AuthorName, md.AuthorID)
-				returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-				returnMesColor = 0x00ff00 // Green
+				/* 指定されたシステムが見つからない場合はセッションの強制再生成をしない */
+				returnMes = "System not found."
+				returnMesColor = 0xff0000 // Red
 			}
 		} else {
-			/* システムの指定が無いの場合はセッションの強制再生成しない */
+			/* システムの指定が無い場合はセッションの強制再生成をしない */
 			returnMes = "Session create failed."
 			returnMesColor = 0xff0000 // Red
 		}
 	} else {
-		sys := string(opt[0])
-		isContains := CheckContainsSystem(GetConfig().EndPoint, sys)
-		if sys != "" && isContains == true {
-			if CheckExistSession(md.ChannelID) == true {
-				/* セッションが生成済みなら生成しない */
-				returnMes = "Session already exists."
-				returnMesColor = 0xffff00 // Yellow
+		isContains := CheckContainsSystem(GetConfig().EndPoint, system)
+		if system != "" {
+			if isContains == true {
+				if CheckExistSession(md.ChannelID) == true {
+					/* セッションが生成済みなら生成しない */
+					returnMes = "Session already exists."
+					returnMesColor = 0xffff00 // Yellow
+				} else {
+					/* セッションを生成 */
+					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
+					returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
+					returnMesColor = 0x00ff00 // Green
+				}
 			} else {
-				/* セッションを生成 */
-				cs = NewSession(md.ChannelID, sys, md.AuthorName, md.AuthorID)
-				returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-				returnMesColor = 0x00ff00 // Green
+				/* 指定されたシステムが見つからない場合はセッションの強制再生成をしない */
+				returnMes = "System not found."
+				returnMesColor = 0xff0000 // Red
 			}
 		} else {
 			/* システムの指定が無い場合はセッションを生成しない */
@@ -102,12 +123,12 @@ func CmdCreateSession(opt []string, cs *Session, md MessageData) (handlerResult 
 }
 
 // CmdConnectSession 親セッション接続ハンドラ
-func CmdConnectSession(opt []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
+func CmdConnectSession(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var returnMes string
 	var returnMesColor int
 
 	/* 親セッションの存在有無確認 */
-	parentID := string(opt[0])
+	parentID := md.Options[0].Value
 	if CheckExistSession(parentID) == true {
 		if parentID != md.ChannelID {
 			/* 自セッションと親セッションが異なるセッションなら接続 */
@@ -142,7 +163,7 @@ func CmdConnectSession(opt []string, cs *Session, md MessageData) (handlerResult
 }
 
 // CmdStoreSession セッション保存ハンドラ
-func CmdStoreSession(opt []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
+func CmdStoreSession(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var returnMes string
 	var returnMesColor int
 
@@ -177,7 +198,7 @@ func CmdStoreSession(opt []string, cs *Session, md MessageData) (handlerResult H
 }
 
 // CmdRestoreSession セッション復元ハンドラ
-func CmdRestoreSession(opt []string, cs *Session, md MessageData) (handlerResult HandlerResult) {
+func CmdRestoreSession(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var returnMes string
 	var returnMesColor int
 
