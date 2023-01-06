@@ -36,7 +36,8 @@ cd Nodens
 {
     "discord-token": "Bot Hoge12Hoge34Foo56Bar78Baz90Boo",
     "discord-botid": "1234567890",
-    "bcdice-endpoint": "http://localhost:9292/v1"
+    "discord-guildid": "123456789123456789",
+    "bcdice-endpoint": "http://localhost:9292/v2"
 }
 ```
 
@@ -54,18 +55,24 @@ go build
 
 [torgtaitai/BCDice](https://github.com/torgtaitai/BCDice)をご参照ください。
 
-## Nodens独自にサポートしている共通コマンド
+## Nodens独自にサポートしている共通スラッシュコマンド
 
-|コマンド      |引数                  |使用例                          |説明                                                                       |
-|:------------:|:--------------------:|:------------------------------:|:-----------------------------------------------------------------------:|
-|ShowVersion   |-                     |`ShowVersion`                   |バージョン情報を表示します                                                 |
-|CreateSession |{SYSTEM_NAME}         |`CreateSession Cthulhu`         |左記のコマンドを実行したチャネルでセッションを生成し，ダイスボットを有効化します|
-|CreateSession |--forced {SYSTEM_NAME}|`CreateSession --forced Cthulhu`|一度生成したセッションを破棄し，再生成します                                 |
-|ConnectSession|{PARENT_CHANNEL_ID}   |`ConnectSession 1234567890`     |CreateSessionで生成したセッションに接続します                               |
-|StoreSession  |-                     |`StoreSession`                  |CreateSessionで生成したセッションをサーバ上に保存します                      |
-|Restore{SYSTEM_NAME}Session|-        |`RestoreCthulhuSession`         |StoreSessionで保存したセッションを復元します                                |
+|コマンド       |引数                                    |説明                                                                             |
+|:-------------:|:--------------------------------------:|:-------------------------------------------------------------------------------:|
+|version        |-                                       |バージョン情報を表示します                                                       |
+|create-session |{system}{opt:other-system}              |左記のコマンドを実行したチャネルでセッションを生成し，ダイスボットを有効化します |
+|create-session |{system}{opt:other-system}{forced=true} |一度生成したセッションを破棄し，再生成します                                     |
+|connect-session|{channel-id}                            |create-sessionで生成したセッションに接続します                                   |
+|store-session  |-                                       |create-sessionで生成したセッションをサーバ上に保存します                         |
+|restore-Session|-                                       |store-sessionで保存したセッションを復元します                                    |
 
-## Nodens独自にサポートしているCoC用コマンド
+## Nodens独自にサポートしている共通テキストコマンド
+
+|コマンド       |引数                  |使用例                           |説明                                                                             |
+|:-------------:|:--------------------:|:-------------------------------:|:------------------------------------------------------------------------------:|
+|connect-session|{PARENT_CHANNEL_ID}   |`connect-session 1234567890`     |create-sessionで生成したセッションに接続します                                   |
+
+## Nodens独自にサポートしているCoC用テキストコマンド
 
 |コマンド      |引数                  |使用例                          |説明                                                             |演算機能の可否|演算機能の使用例|
 |:------------:|:--------------------:|:------------------------------:|:---------------------------------------------------------------:|:------------:|:----------------:|
@@ -222,5 +229,5 @@ Bot: @User1 (1D100<=52) ＞ 20 ＞ 成功
 
 ## その他
 
-**Q. CoC以外のシステムに独自コマンドを実装する予定は有りますか?**
-A. 無いです。対応させたいシステムがある場合は各自Forkなりプルリクをお願いします。
+**Q. CoC以外のシステムに独自コマンドを実装する予定は有りますか?**  
+A. 無いです。対応させたいシステムがある場合は各自Forkなりプルリクをお願いします。  

@@ -9,6 +9,7 @@ import (
 type SystemConfig struct {
 	BotToken string `json:"discord-token"`
 	BotID    string `json:"discord-botid"`
+	GuildId  string `json:"discord-guildid"`
 	EndPoint string `json:"bcdice-endpoint"`
 }
 

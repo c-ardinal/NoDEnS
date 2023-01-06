@@ -1,5 +1,6 @@
 {
     "discord-token": "Bot Hoge12Hoge34Foo56Bar78Baz90Boo",
     "discord-botid": "1234567890",
-    "bcdice-endpoint": "http://localhost:9292/v1"
+    "discord-guildid": "123456789123456789",
+    "bcdice-endpoint": "http://localhost:9292/v2"
 }
