@@ -23,6 +23,14 @@ type MessageData struct {
 	AuthorID      string
 	AuthorName    string
 	MessageString string
+	Command       string
+	Options       []CommandOption
+}
+
+// CommandOption コマンドオプション情報
+type CommandOption struct {
+	Name  string
+	Value string
 }
 
 // HandlerResult ハンドラの戻りオブジェクト
