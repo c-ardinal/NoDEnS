@@ -17,9 +17,9 @@ func CmdShowVersion(opt []string, cs *Session, md MessageData) (handlerResult Ha
 		returnMesColor = 0xff0000 // Red
 	} else {
 		/* テキストメッセージ */
-		returnMes = "\r\n[Nodens]: " + GetVersion()
-		returnMes += "\r\n[API]: " + verResult.API
-		returnMes += "\r\n[BCDice]: " + verResult.BCDice
+		returnMes = "\n[NoDEnS]: " + GetVersion()
+		returnMes += "\n[BCDice-API]: " + verResult.API
+		returnMes += "\n[BCDice]: " + verResult.BCDice
 		returnMesColor = 0x00ff00 // Green
 	}
 

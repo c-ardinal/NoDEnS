@@ -21,8 +21,7 @@ func main() {
 		configFile = os.Args[1]
 		_, err := ioutil.ReadFile(configFile)
 		if err != nil {
-			log.Println("Error => " + err.Error())
-			os.Exit(1)
+			log.Panicf("[Error]: Cannot open file '%v': '%v'", configFile, err)
 		}
 	}
 
@@ -32,8 +31,7 @@ func main() {
 	// Discordのインスタンス生成
 	discord, err := discordgo.New(core.GetConfig().BotToken)
 	if err != nil {
-		log.Println(err)
-		panic(err)
+		log.Panicf("[Error]: Cannot create discord instance : '%v'", err)
 	}
 
 	// Discordのメッセージハンドラ登録
@@ -75,12 +73,12 @@ func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 
 	//var replyObject discordgo.MessageSend
 
-	log.Printf("%20s %20s > %s\n", md.ChannelID, md.AuthorName, md.MessageString)
+	log.Printf("[Event]: Message received. ChannelId:%20s Author:%20s > %s\n", md.ChannelID, md.AuthorName, md.MessageString)
 
 	if md.AuthorID != core.GetConfig().BotID {
 		handlerResult := core.ExecuteCmdHandler(md)
 		if handlerResult.Error != nil {
-			log.Println(handlerResult.Error)
+			log.Printf("[Error]: %v", handlerResult.Error)
 		}
 
 		ref := discordgo.MessageReference{

@@ -20,14 +20,14 @@ type BCDiceVersionResult struct {
 func ExecuteVersionCheck(endpoint string) (vr BCDiceVersionResult, err error) {
 	urlStr := endpoint + "/version"
 	resp, err := http.Get(urlStr)
-	log.Printf("\"[URL]: %s\"", urlStr)
+	log.Printf("[Event]: BCDice-API call > %s", urlStr)
 	if err != nil {
-		log.Println(err)
+		log.Printf("[Error]: %v", err)
 		return vr, err
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&vr); err != nil {
-		log.Println(err)
+		log.Printf("[Error]: %v", err)
 		return vr, err
 	}
 	return vr, nil
@@ -49,14 +49,14 @@ type BCDiceSystem struct {
 func ExecuteGetSystems(endpoint string) (sr BCDiceSystemsResult, err error) {
 	urlStr := endpoint + "/game_system"
 	resp, err := http.Get(urlStr)
-	log.Printf("\"[URL]: %s\"", urlStr)
+	log.Printf("[Event]: BCDice-API call > %s", urlStr)
 	if err != nil {
-		log.Println(err)
+		log.Printf("[Error]: %v", err)
 		return sr, err
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
-		log.Println(err)
+		log.Printf("[Error]: %v", err)
 		return sr, err
 	}
 	return sr, nil
@@ -165,17 +165,17 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 func ExecuteDiceRoll(endpoint string, system string, dice string) (rr BCDiceRollResult, err error) {
 	urlStr := endpoint + "/game_system/" + system + "/roll?command=" + url.QueryEscape(dice)
 	resp, err := http.Get(urlStr)
-	log.Printf("\"[URL]: %s\"", urlStr)
+	log.Printf("[Event]: BCDice-API call > %s", urlStr)
 	if err != nil {
-		log.Println(err)
+		log.Printf("[Error]: %v", err)
 		return rr, err
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&rr); err != nil {
-		log.Println(err)
+		log.Printf("[Error]: %v", err)
 		return rr, err
 	}
-	log.Println(rr)
+	log.Printf("[Event]: Dice roll result > '%v'", rr)
 	return rr, nil
 }
 
