@@ -81,21 +81,21 @@ func CmdRegistryCharacter(opt []string, cs *core.Session, md core.MessageData) (
 	if returnMes != "" {
 		handlerResult.Normal.Content = returnMes
 	} else {
-		handlerResult.Normal.Content = "\r\n====================\r\n"
-		handlerResult.Normal.Content += "**[名 前]** " + cd.Personal.Name + "\r\n"
-		handlerResult.Normal.Content += "**[年 齢]** " + strconv.Itoa(cd.Personal.Age) + "歳\r\n"
-		handlerResult.Normal.Content += "**[性 別]** " + cd.Personal.Sex + "\r\n"
-		handlerResult.Normal.Content += "**[職 業]** " + cd.Personal.Job + "\r\n"
+		handlerResult.Normal.Content = "\n====================\n"
+		handlerResult.Normal.Content += "**[名 前]** " + cd.Personal.Name + "\n"
+		handlerResult.Normal.Content += "**[年 齢]** " + strconv.Itoa(cd.Personal.Age) + "歳\n"
+		handlerResult.Normal.Content += "**[性 別]** " + cd.Personal.Sex + "\n"
+		handlerResult.Normal.Content += "**[職 業]** " + cd.Personal.Job + "\n"
 		for _, cdan := range CdAbilityNameList {
 			a := cd.Ability[cdan]
 			if a.Now == a.Init {
-				handlerResult.Normal.Content += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + "\r\n"
+				handlerResult.Normal.Content += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + "\n"
 			} else {
-				handlerResult.Normal.Content += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + " (Init: " + strconv.Itoa(a.Init) + ")\r\n"
+				handlerResult.Normal.Content += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + " (Init: " + strconv.Itoa(a.Init) + ")\n"
 			}
 		}
-		handlerResult.Normal.Content += "**[メ モ]** \r\n" + cd.Memo + "\r\n"
-		handlerResult.Normal.Content += "====================\r\n"
+		handlerResult.Normal.Content += "**[メ モ]** \n" + cd.Memo + "\n"
+		handlerResult.Normal.Content += "====================\n"
 	}
 
 	/* Embedメッセージ */
@@ -679,21 +679,21 @@ func CmdShowStatistics(opt []string, cs *core.Session, md core.MessageData) (han
 	// 集計結果の構築
 
 	if 0 < len(diceResultStatistics) {
-		handlerResult.Normal.Content = "\r\n===================="
+		handlerResult.Normal.Content = "\n===================="
 		for _, drs := range diceResultStatistics {
-			handlerResult.Normal.Content += "\r\n【" + drs.Player.Name + "】\r\n"
+			handlerResult.Normal.Content += "\n【" + drs.Player.Name + "】\n"
 			if len(drs.Critical) > 0 {
-				handlerResult.Normal.Content += "●決定的成功：\r\n"
+				handlerResult.Normal.Content += "●決定的成功：\n"
 				handlerResult.Normal.Content += strings.Join(drs.Critical, ", ")
-				handlerResult.Normal.Content += "\r\n"
+				handlerResult.Normal.Content += "\n"
 			}
 			if len(drs.Fumble) > 0 {
-				handlerResult.Normal.Content += "●致命的失敗：\r\n"
+				handlerResult.Normal.Content += "●致命的失敗：\n"
 				handlerResult.Normal.Content += strings.Join(drs.Fumble, ", ")
-				handlerResult.Normal.Content += "\r\n"
+				handlerResult.Normal.Content += "\n"
 			}
 		}
-		handlerResult.Normal.Content += "====================\r\n"
+		handlerResult.Normal.Content += "====================\n"
 	} else {
 		handlerResult.Normal.Content += "No data."
 	}

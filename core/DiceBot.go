@@ -130,6 +130,7 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 				handlerResult.Secret.EnableType = EnEmbed
 
 				var rollResult BCDiceRollResult
+			log.Printf("[Event]: Execute dice roll '%v'", md.MessageString)
 				rollResult, handlerResult.Error = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, md.MessageString)
 				if handlerResult.Error != nil {
 					/* テキストメッセージ */
