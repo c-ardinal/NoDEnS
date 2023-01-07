@@ -140,7 +140,7 @@ var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
 			DMPermission:             &BOL_DAT_DM_PERMISSION_DENY,
 		},
 	},
-	{"General", STR_CMD_RESTORE_SESSION, core.CmdRestoreSession, // セッション復帰処理
+	{"General", STR_CMD_RESTORE_SESSION, discordDriver.CmdRestoreSession, // セッション復帰処理
 		discordgo.ApplicationCommand{
 			Name:                     STR_CMD_RESTORE_SESSION,
 			Description:              "TRPGセッションを復元します。",
