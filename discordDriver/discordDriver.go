@@ -288,3 +288,13 @@ func CmdCreateSession(cs *core.Session, md core.MessageData) (handlerResult core
 	}
 	return handlerResult
 }
+
+// TRPGセッション復元処理
+func CmdRestoreSession(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
+	handlerResult = core.CmdRestoreSession(cs, md)
+	if handlerResult.Error == nil {
+		JobRegistriesAppCommands(core.GetSessionByID(md.ChannelID).Scenario.System, md.GuildID)
+		registeredGuildIds = append(registeredGuildIds, md.GuildID)
+	}
+	return handlerResult
+}
