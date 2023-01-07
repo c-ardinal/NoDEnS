@@ -100,19 +100,19 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 	/* 不等号を堺に文字列分割 */
 	rep := regexp.MustCompile("(.+)(<=|>=|=|>|<)(.+)")
 	splitTargetStr := rep.ReplaceAllString(dice, "$1$2{SPLIT}$3")
-	splitedStrArray := strings.Split(splitTargetStr, "{SPLIT}")
+	splitStrArray := strings.Split(splitTargetStr, "{SPLIT}")
 
 	var diceCalcStr string
-	if len(splitedStrArray) > 1 {
-		diceCalcStr = splitedStrArray[1]
+	if len(splitStrArray) > 1 {
+		diceCalcStr = splitStrArray[1]
 	} else {
-		diceCalcStr = splitedStrArray[0]
+		diceCalcStr = splitStrArray[0]
 	}
 
 	/* 計算式が含まれているか確認 */
 	calcCheckRegp := regexp.MustCompile("[\\( ]*[\\+\\- ]*[a-zA-Z0-9 ]+[\\) ]*[\\+\\-\\/\\* ]{1}[\\( ]*[\\+\\- ]*[a-zA-Z0-9 ]+[\\) ]*")
-	isCalcMutch := calcCheckRegp.MatchString(diceCalcStr)
-	if isCalcMutch {
+	isCalcMatch := calcCheckRegp.MatchString(diceCalcStr)
+	if isCalcMatch {
 		/* 計算式が含まれていた場合 */
 		var calAnswer string
 		var workingFormula string
@@ -120,9 +120,9 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 		if err != nil {
 			return rr, err
 		}
-		if len(splitedStrArray) > 1 {
+		if len(splitStrArray) > 1 {
 			var rrtmp BCDiceRollResult
-			strIntegDiceCmd := splitedStrArray[0] + calAnswer
+			strIntegDiceCmd := splitStrArray[0] + calAnswer
 			rrtmp, err = ExecuteDiceRoll(endpoint, system, strIntegDiceCmd)
 			rr.Ok = rrtmp.Ok
 			if "" != workingFormula {

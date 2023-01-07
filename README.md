@@ -6,7 +6,7 @@ Discord用のダイスボット
 
 ## 概要
 
-DiscrodでBCDiceのコマンドを用いたダイスが振れるようになります。  
+DiscordでBCDiceのコマンドを用いたダイスが振れるようになります。  
 クトゥルフ神話TRPG(以下，CoC)用に作成したbotですが，
 BCDiceがサポートしているシステムであれば利用可能です。
 
@@ -58,7 +58,7 @@ go build
 ## Nodens独自にサポートしている共通スラッシュコマンド
 
 |コマンド       |引数                                    |説明                                                                             |
-|:-------------:|:--------------------------------------:|:-------------------------------------------------------------------------------:|
+|:--------------|:---------------------------------------|:--------------------------------------------------------------------------------|
 |version        |-                                       |バージョン情報を表示します                                                       |
 |create-session |{system}{opt:other-system}              |左記のコマンドを実行したチャネルでセッションを生成し，ダイスボットを有効化します |
 |create-session |{system}{opt:other-system}{forced=true} |一度生成したセッションを破棄し，再生成します                                     |
@@ -68,19 +68,26 @@ go build
 
 ## Nodens独自にサポートしている共通テキストコマンド
 
-|コマンド       |引数                  |使用例                           |説明                                                                             |
-|:-------------:|:--------------------:|:-------------------------------:|:------------------------------------------------------------------------------:|
-|connect-session|{PARENT_CHANNEL_ID}   |`connect-session 1234567890`     |create-sessionで生成したセッションに接続します                                   |
+|コマンド       |引数                 |使用例                          |説明                                                             |
+|:--------------|:--------------------|:-------------------------------|:----------------------------------------------------------------|
+|無し           |-                    |-                               |                                                                 |
+
+## Nodens独自にサポートしているCoC用スラッシュコマンド
+
+|コマンド       |引数                                    |説明                                                                             |
+|:--------------|:---------------------------------------|:--------------------------------------------------------------------------------|
+|sec-dice       |{command}                               |シークレットダイスロールを行います                                               |
+|sec-skill      |{command}                               |S=5, F=95で1d100のシークレット技能ロールを行います                               |
 
 ## Nodens独自にサポートしているCoC用テキストコマンド
 
 |コマンド      |引数                  |使用例                          |説明                                                             |演算機能の可否|演算機能の使用例|
-|:------------:|:--------------------:|:------------------------------:|:---------------------------------------------------------------:|:------------:|:----------------:|
+|:-------------|:---------------------|:-------------------------------|:----------------------------------------------------------------|:-------------|:-----------------|
 |regchara      |{CHARASHEET_URL}      |`regchara https://charasheet.vampire-blood.net/123456789abcdef`|キャラシートの情報を取得します    |✕            |-                 |
 |check         |{ABILITY_SKILL_NAME}  |`check 聞き耳`                  |能力値もしくは技能値の初期値・開始値・現在値を確認出来ます       |✕            |-                 |
 |ctrl          |{ABILITY_SKILL_NAME} {VAR_NUM} |`ctrl SAN -1`          |能力値もしくは技能値を加算/減算します                            |○            |`ctrl HP -(1d2+1)`|
-|roll          |{ABILITY_SKILL_NAME}  |`roll 聞き耳`                   |S=5, F=95で1d100を振ります                                       |○            |`roll DEX*5`      |
-|Sroll         |{ABILITY_SKILL_NAME}  |`Sroll 聞き耳`                  |S=5, F=95で1d100のシークレットダイスを振ります                   |○            |`Sroll 聞き耳+20` |
+|roll          |{ABILITY_SKILL_NAME}  |`roll 聞き耳`                   |S=5, F=95で1d100を技能ロールを行います                           |○            |`roll DEX*5`      |
+|Sroll         |{ABILITY_SKILL_NAME}  |`Sroll 聞き耳`                  |S=5, F=95で1d100のシークレット技能ロールを行います               |○            |`Sroll 聞き耳+20` |
 |sanc          |{SUCCESS} {FAIL}      |`sanc 1 1d2`                    |SAN値チェックロールおよびSAN値の加算/減算処理を実施します        |○            |`sanc 1 1d2+1`    |
 
 ## 各システム共通コマンドの使い方
@@ -88,7 +95,7 @@ go build
 ### Case G-1. ダイスボットの有効化
 
 ```text
-User: CreateSession Cthulhu
+User: create-session Cthulhu
 Bot: @User Session create successfully. (System: Cthulhu, ID: 1234567890)
 ```
 
@@ -97,9 +104,9 @@ Bot: @User Session create successfully. (System: Cthulhu, ID: 1234567890)
 ※同一チャネルでG-1が実行済み前提
 
 ```text
-User: CreateSession Cthulhu
+User: create-session Cthulhu
 Bot: @User Session already exist.
-User: CreateSession --forced Cthulhu
+User: create-session --forced Cthulhu
 Bot: @User Session create successfully. (System: Cthulhu, ID: 1234567890)
 ```
 
@@ -109,7 +116,7 @@ Bot: @User Session create successfully. (System: Cthulhu, ID: 1234567890)
 ※BotとのDMチャネルで使用することを想定しています
 
 ```text
-User: ConnectSession 1234567890
+User: connect-session 1234567890
 Bot: @User Parent session connect successfully. (Parent: 1234567890, Child: 1357924680)
 ```
 

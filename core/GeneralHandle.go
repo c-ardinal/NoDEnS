@@ -1,6 +1,8 @@
 package core
 
 import (
+	"errors"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -14,13 +16,13 @@ func CmdShowVersion(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	if err != nil {
 		returnMes = "Reference error."
 		handlerResult.Error = err
-		returnMesColor = 0xff0000 // Red
+		returnMesColor = EnColorRed
 	} else {
 		/* テキストメッセージ */
 		returnMes = "\n[NoDEnS]: " + GetVersion()
 		returnMes += "\n[BCDice-API]: " + verResult.API
 		returnMes += "\n[BCDice]: " + verResult.BCDice
-		returnMesColor = 0x00ff00 // Green
+		returnMesColor = EnColorGreen
 	}
 
 	/* 有効にするメッセージタイプ */
@@ -54,7 +56,6 @@ func CmdCreateSession(cs *Session, md MessageData) (handlerResult HandlerResult)
 			}
 		}
 	}
-
 	if forced != "" {
 		isContains := CheckContainsSystem(GetConfig().EndPoint, system)
 		if system != "" {
@@ -64,22 +65,24 @@ func CmdCreateSession(cs *Session, md MessageData) (handlerResult HandlerResult)
 					RemoveSession(md.ChannelID)
 					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
 					returnMes = "Session recreate successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-					returnMesColor = 0x00ff00 // Green
+					returnMesColor = EnColorGreen
 				} else {
 					/* セッションを生成 */
 					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
 					returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-					returnMesColor = 0x00ff00 // Green
+					returnMesColor = EnColorGreen
 				}
 			} else {
 				/* 指定されたシステムが見つからない場合はセッションの強制再生成をしない */
 				returnMes = "System not found."
-				returnMesColor = 0xff0000 // Red
+				handlerResult.Error = errors.New(returnMes)
+				returnMesColor = EnColorRed
 			}
 		} else {
 			/* システムの指定が無い場合はセッションの強制再生成をしない */
 			returnMes = "Session create failed."
-			returnMesColor = 0xff0000 // Red
+			handlerResult.Error = errors.New(returnMes)
+			returnMesColor = EnColorRed
 		}
 	} else {
 		isContains := CheckContainsSystem(GetConfig().EndPoint, system)
@@ -88,22 +91,24 @@ func CmdCreateSession(cs *Session, md MessageData) (handlerResult HandlerResult)
 				if CheckExistSession(md.ChannelID) == true {
 					/* セッションが生成済みなら生成しない */
 					returnMes = "Session already exists."
-					returnMesColor = 0xffff00 // Yellow
+					returnMesColor = EnColorYellow
 				} else {
 					/* セッションを生成 */
 					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
 					returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-					returnMesColor = 0x00ff00 // Green
+					returnMesColor = EnColorGreen
 				}
 			} else {
 				/* 指定されたシステムが見つからない場合はセッションの強制再生成をしない */
 				returnMes = "System not found."
-				returnMesColor = 0xff0000 // Red
+				handlerResult.Error = errors.New(returnMes)
+				returnMesColor = EnColorRed
 			}
 		} else {
 			/* システムの指定が無い場合はセッションを生成しない */
 			returnMes = "Session create failed."
-			returnMesColor = 0xff0000 // Red
+			handlerResult.Error = errors.New(returnMes)
+			returnMesColor = EnColorRed
 		}
 	}
 
@@ -133,18 +138,20 @@ func CmdConnectSession(cs *Session, md MessageData) (handlerResult HandlerResult
 		if parentID != md.ChannelID {
 			/* 自セッションと親セッションが異なるセッションなら接続 */
 			pcs := GetSessionByID(parentID)
-			(*pcs).Discord.Child = append((*pcs).Discord.Child, NaID{ID: md.ChannelID})
-			returnMes = "Parent session connect successfully.\n[Parent]: " + (*pcs).Discord.Parent.ID + "\n[Child]: " + md.ChannelID + ")"
-			returnMesColor = 0x00ff00 // Green
+			(*pcs).Chat.Child = append((*pcs).Chat.Child, NaID{ID: md.ChannelID})
+			returnMes = "Parent session connect successfully.\n[Parent]: " + (*pcs).Chat.Parent.ID + "\n[Child]: " + md.ChannelID + ")"
+			returnMesColor = EnColorGreen
 		} else {
 			/* 親・自セッションが同一の場合は接続しない */
 			returnMes = "Invalid session id."
-			returnMesColor = 0xff0000 // Red
+			handlerResult.Error = errors.New(returnMes)
+			returnMesColor = EnColorRed
 		}
 	} else {
 		/* 親セッションが存在しない場合は接続しない */
 		returnMes = "Parent session not found."
-		returnMesColor = 0xff0000 // Red
+		handlerResult.Error = errors.New(returnMes)
+		returnMesColor = EnColorRed
 	}
 
 	/* 有効にするメッセージタイプ */
@@ -172,14 +179,15 @@ func CmdStoreSession(cs *Session, md MessageData) (handlerResult HandlerResult) 
 		if err != nil {
 			returnMes = "Session store failed."
 			handlerResult.Error = err
-			returnMesColor = 0xff0000 // Red
+			returnMesColor = EnColorRed
 		} else {
 			returnMes = "Session store successfully."
-			returnMesColor = 0x00ff00 // Green
+			returnMesColor = EnColorGreen
 		}
 	} else {
 		returnMes = "Session not created."
-		returnMesColor = 0xff0000 // Red
+		handlerResult.Error = errors.New(returnMes)
+		returnMesColor = EnColorRed
 	}
 
 	/* 有効にするメッセージタイプ */
@@ -206,7 +214,7 @@ func CmdRestoreSession(cs *Session, md MessageData) (handlerResult HandlerResult
 	err := RestoreSession(md.ChannelID)
 	if err != nil {
 		returnMes = "Session load failed."
-		returnMesColor = 0xff0000 // Red
+		returnMesColor = EnColorRed
 		handlerResult.Error = err
 	} else {
 		// 各システム固有情報の復元
@@ -216,7 +224,7 @@ func CmdRestoreSession(cs *Session, md MessageData) (handlerResult HandlerResult
 			systemRestoreFunc.ExecuteSessionRestore(ses)
 		}
 		returnMes = "Session restore successfully."
-		returnMesColor = 0x00ff00 // Green
+		returnMesColor = EnColorGreen
 	}
 
 	/* 有効にするメッセージタイプ */

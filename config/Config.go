@@ -2,6 +2,7 @@ package config
 
 import (
 	"Nodens/core"
+	"Nodens/discordDriver"
 	"Nodens/system/cthulhu"
 
 	"github.com/bwmarrin/discordgo"
@@ -21,7 +22,7 @@ type CmdHandleFuncStruct struct {
 // スラッシュコマンド設定用定数定義
 var BOL_DAT_DM_PERMISSION_ALLOW bool = true                                              // DMPermissionにはconstを設定出来ないためvarで定義
 var BOL_DAT_DM_PERMISSION_DENY bool = false                                              // DMPermissionにはconstを設定出来ないためvarで定義
-var INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS int64 = discordgo.PermissionManageChannels // DefaultMenberPermissionにはconstを設定出来ないためvarで定義
+var INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS int64 = discordgo.PermissionManageChannels // DefaultMemberPermissionにはconstを設定出来ないためvarで定義
 
 // 共通コマンド定数定義
 const STR_CMD_VERSION string = "version"
@@ -39,7 +40,7 @@ var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
 			DMPermission: &BOL_DAT_DM_PERMISSION_ALLOW,
 		},
 	},
-	{"General", STR_CMD_CREATE_SESSION, core.CmdCreateSession, // 親セッション生成処理
+	{"General", STR_CMD_CREATE_SESSION, discordDriver.CmdCreateSession, // 親セッション生成処理
 		discordgo.ApplicationCommand{
 			Name:         STR_CMD_CREATE_SESSION,
 			Description:  "TRPGセッションを生成し、ダイスボットを有効化します。",
@@ -123,13 +124,42 @@ var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
 			DMPermission:             &BOL_DAT_DM_PERMISSION_DENY,
 		},
 	},
+	{"Cthulhu", "sec-dice", cthulhu.CmdSecretDiceRoll, // シークレットダイスロール
+		discordgo.ApplicationCommand{
+			Name:                     "sec-dice",
+			Description:              "シークレットダイスロールを実施します。",
+			DefaultMemberPermissions: &INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS,
+			DMPermission:             &BOL_DAT_DM_PERMISSION_DENY,
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Name:        "command",
+					Description: "技能を指定します。",
+					Required:    true,
+					Type:        discordgo.ApplicationCommandOptionString,
+				},
+			},
+		},
+	},
+	{"Cthulhu", "sec-skill", cthulhu.CmdSecretLinkRoll, // シークレット技能ロール
+		discordgo.ApplicationCommand{
+			Name:                     "sec-skill",
+			Description:              "シークレット技能ロールを実施します。",
+			DefaultMemberPermissions: &INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS,
+			DMPermission:             &BOL_DAT_DM_PERMISSION_DENY,
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Name:        "command",
+					Description: "ダイスを指定します。",
+					Required:    true,
+					Type:        discordgo.ApplicationCommandOptionString,
+				},
+			},
+		},
+	},
 }
 
 // CmdHandleFuncTable テキストコマンドハンドラテーブル
 var CmdHandleFuncTable = []CmdHandleFuncStruct{
-	{"General", STR_CMD_CONNECT_SESSION, core.CmdConnectSession, // 親セッション連携処理
-		discordgo.ApplicationCommand{},
-	},
 	{"Cthulhu", "regchara", cthulhu.CmdRegistryCharacter, // キャラシート連携処理
 		discordgo.ApplicationCommand{},
 	},
