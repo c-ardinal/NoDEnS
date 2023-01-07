@@ -7,18 +7,38 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// CmdHandleFuncStruct コマンドハンドラテーブル用構造体
-type CmdHandleFuncStruct struct {
+/****************************************************************************/
+/* 内部型定義                                                               */
+/****************************************************************************/
+
+// cmdHandleFuncStruct コマンドハンドラテーブル用構造体
+type cmdHandleFuncStruct struct {
 	System           string
-	Function         core.CmdHandleFunc
 	SlashCommandData discordgo.ApplicationCommand
 }
 
-var session *discordgo.Session
-var registeredGuildIds []string
-var slashCmdHandleFuncList []CmdHandleFuncStruct
+/****************************************************************************/
+/* 内部定数定義                                                             */
+/****************************************************************************/
 
-// JobNewSession Discordのセッションを生成する
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
+
+// Discordセッションインスタンス
+var session *discordgo.Session
+
+// 登録済みスラッシュコマンドリスト
+var registeredGuildIds []string
+
+// スラッシュコマンド定義リスト
+var slashCmdHandleFuncList []cmdHandleFuncStruct
+
+/****************************************************************************/
+/* 関数定義                                                                 */
+/****************************************************************************/
+
+// Discordのセッションを生成する
 func JobNewDiscordSession() (ses *discordgo.Session, err error) {
 	ses, err = discordgo.New(core.GetConfig().BotToken)
 	if err != nil {
@@ -28,21 +48,21 @@ func JobNewDiscordSession() (ses *discordgo.Session, err error) {
 	return ses, err
 }
 
-// GetDiscordSession Discordのセッションを返す
+// Discordのセッションを返す
 func GetDiscordSession() *discordgo.Session {
 	return session
 }
 
-func SetSlashCmdHandleFunc(system string, handleFunc core.CmdHandleFunc, appCommand discordgo.ApplicationCommand) {
-	newData := CmdHandleFuncStruct{
+// スラッシュコマンドの情報を設定する
+func AddSlashCmdData(system string, appCommand discordgo.ApplicationCommand) {
+	newData := cmdHandleFuncStruct{
 		System:           system,
-		Function:         handleFunc,
 		SlashCommandData: appCommand,
 	}
 	slashCmdHandleFuncList = append(slashCmdHandleFuncList, newData)
 }
 
-// onMessageCreate メッセージ受信時処理
+// メッセージ受信時処理
 func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
 	var md core.MessageData = core.MessageData{
 		ChannelID:     message.ChannelID,
@@ -52,8 +72,6 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 		AuthorName:    message.Author.Username,
 		MessageString: message.Content,
 	}
-
-	//var replyObject discordgo.MessageSend
 
 	log.Printf("[Event]: Message received. ChannelId:%20s Author:%20s > %s\n", md.ChannelID, md.AuthorName, md.MessageString)
 
@@ -68,7 +86,7 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 			ChannelID: md.ChannelID,
 		}
 
-		// キャラ名取得
+		// キャラクター名取得
 		characterName := core.GetCharacterData(md.ChannelID, md.AuthorID, "CharacterName")
 		cSheetUrl := core.GetCharacterData(md.ChannelID, md.AuthorID, "CSheetUrl")
 		if characterName != "" {
@@ -112,7 +130,7 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 	}
 }
 
-// onInteractionCreate インタラクション受診時処理
+// インタラクション受診時処理
 func OnInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	// インタラクション送信者情報取得
 	var interactionUser *discordgo.User
@@ -150,7 +168,7 @@ func OnInteractionCreate(session *discordgo.Session, interaction *discordgo.Inte
 		log.Printf("[Error]: %v", handlerResult.Error)
 	}
 
-	// キャラ名取得
+	// キャラクター名取得
 	characterName := core.GetCharacterData(md.ChannelID, md.AuthorID, "CharacterName")
 	cSheetUrl := core.GetCharacterData(md.ChannelID, md.AuthorID, "CSheetUrl")
 	if characterName != "" {
@@ -255,7 +273,7 @@ func JobDeleteAppCommands(guildId string) {
 	}
 }
 
-// CmdCreateSession TRPGセッション生成処理
+// TRPGセッション生成処理
 func CmdCreateSession(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var system string
 	for _, opt := range md.Options {

@@ -6,39 +6,26 @@ import (
 	"os"
 )
 
-// Session セッションデータ構造体
-type Session struct {
-	Chat     Chat                   `json:"chat"`
-	Scenario Scenario               `json:"scenario"`
-	Pc       map[string]interface{} `json:"pc"`
-	Npc      map[string]interface{} `json:"npc"`
-}
+/****************************************************************************/
+/* 内部型定義                                                               */
+/****************************************************************************/
 
-// Chat Chat情報構造体
-type Chat struct {
-	Parent NaID   `json:"text"`
-	Child  []NaID `json:"private"`
-	Voice  NaID   `json:"voice"`
-}
+/****************************************************************************/
+/* 内部定数定義                                                             */
+/****************************************************************************/
 
-// Scenario シナリオ情報構造体
-type Scenario struct {
-	System  string `json:"system"`
-	Name    string `json:"name"`
-	Keeper  NaID   `json:"keeper"`
-	Chatlog string `json:"chatlog"`
-}
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
 
-// NaID 名前&ID紐づけ構造体
-type NaID struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-}
-
-// trpgSession セッション情報格納マップ
+// セッション情報格納マップ
 var trpgSession = map[string]*Session{}
 
-// NewSession セッション生成処理
+/****************************************************************************/
+/* 関数定義                                                                 */
+/****************************************************************************/
+
+// セッション生成処理
 func NewSession(chID string, system string, kpName string, kpID string) *Session {
 	var newSession Session
 	newSession.Pc = map[string]interface{}{}
@@ -51,7 +38,7 @@ func NewSession(chID string, system string, kpName string, kpID string) *Session
 	return &newSession
 }
 
-// RemoveSession セッション削除処理
+// セッション削除処理
 func RemoveSession(chID string) bool {
 	result := false
 	if CheckExistSession(chID) == true {
@@ -61,7 +48,7 @@ func RemoveSession(chID string) bool {
 	return result
 }
 
-// StoreSession セッション保存処理
+// セッション保存処理
 func StoreSession(chID string) (*os.File, error) {
 	outputJSON, _ := json.MarshalIndent(*(trpgSession[chID]), "", "\t")
 	os.Mkdir("./session_data/", 0755)
@@ -71,7 +58,7 @@ func StoreSession(chID string) (*os.File, error) {
 	return file, err
 }
 
-// RestoreSession セッション復旧処理
+// セッション復旧処理
 func RestoreSession(chID string) error {
 	rawData, err := ioutil.ReadFile("./session_data/" + chID + ".json")
 	if err != nil {
@@ -90,32 +77,32 @@ func RestoreSession(chID string) error {
 	return nil
 }
 
-// CheckExistSession セッション存在有無チェック処理
+// セッション存在有無チェック処理
 func CheckExistSession(chID string) bool {
 	_, result := trpgSession[chID]
 	return result
 }
 
-// GetSessionByID セッション取得処理
+// セッション取得処理
 func GetSessionByID(chID string) *Session {
 	return trpgSession[chID]
 }
 
-// CheckExistCharacter プレイヤーキャラ登録有無チェック処理
+// プレイヤーキャラクター登録有無チェック処理
 func CheckExistCharacter(chID string, plID string) bool {
 	ts, _ := trpgSession[chID]
 	_, result := (*ts).Pc[plID]
 	return result
 }
 
-// CheckExistNPCharacter ノンプレイヤーキャラ登録有無チェック処理
+// ノンプレイヤーキャラクター登録有無チェック処理
 func CheckExistNPCharacter(chID string, plID string) bool {
 	ts, _ := trpgSession[chID]
 	_, result := (*ts).Npc[plID]
 	return result
 }
 
-// GetCharacterData キャラ名取得処理
+// キャラクター名取得処理
 func GetCharacterData(chID string, plID string, dataName string) string {
 	var result string = ""
 	ts, sesExist := trpgSession[chID]
@@ -144,7 +131,7 @@ func GetCharacterData(chID string, plID string, dataName string) string {
 	return result
 }
 
-// GetParentIDFromChildID 親セッションID取得処理
+// 親セッションID取得処理
 func GetParentIDFromChildID(childID string) string {
 	for _, ps := range trpgSession {
 		for _, cid := range (*ps).Chat.Child {

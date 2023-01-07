@@ -8,10 +8,23 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
-// コマンドハンドラコンフィグ
-// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
-// CmdHandleFuncStruct コマンドハンドラテーブル用構造体
+/****************************************************************************/
+/* 内部型定義                                                               */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 内部定数定義                                                             */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 外部公開型定義                                                           */
+/****************************************************************************/
+
+// コマンドハンドラテーブル用構造体
 type CmdHandleFuncStruct struct {
 	System           string
 	Command          string
@@ -19,10 +32,16 @@ type CmdHandleFuncStruct struct {
 	SlashCommandData discordgo.ApplicationCommand
 }
 
-// スラッシュコマンド設定用定数定義
-var BOL_DAT_DM_PERMISSION_ALLOW bool = true                                              // DMPermissionにはconstを設定出来ないためvarで定義
-var BOL_DAT_DM_PERMISSION_DENY bool = false                                              // DMPermissionにはconstを設定出来ないためvarで定義
-var INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS int64 = discordgo.PermissionManageChannels // DefaultMemberPermissionにはconstを設定出来ないためvarで定義
+// キャラクターデータ取得関数用構造体
+type CharacterDataGetFuncStruct struct {
+	System   string
+	DataName string
+	Function core.CharacterDataGetFunc
+}
+
+/****************************************************************************/
+/* 外部公開定数定義                                                         */
+/****************************************************************************/
 
 // 共通コマンド定数定義
 const STR_CMD_VERSION string = "version"
@@ -31,7 +50,12 @@ const STR_CMD_CONNECT_SESSION string = "connect-session"
 const STR_CMD_STORE_SESSION string = "store-session"
 const STR_CMD_RESTORE_SESSION string = "restore-session"
 
-// SlashCmdHandleFuncTable スラッシュコマンドハンドラテーブル
+// スラッシュコマンド設定用定数定義
+var BOL_DAT_DM_PERMISSION_ALLOW bool = true                                              // DMPermissionにはconstを設定出来ないためvarで定義
+var BOL_DAT_DM_PERMISSION_DENY bool = false                                              // DMPermissionにはconstを設定出来ないためvarで定義
+var INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS int64 = discordgo.PermissionManageChannels // DefaultMemberPermissionにはconstを設定出来ないためvarで定義
+
+// スラッシュコマンドハンドラテーブル
 var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
 	{"General", STR_CMD_VERSION, core.CmdShowVersion, // バージョン情報表示処理
 		discordgo.ApplicationCommand{
@@ -126,10 +150,9 @@ var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
 	},
 	{"Cthulhu", "sec-dice", cthulhu.CmdSecretDiceRoll, // シークレットダイスロール
 		discordgo.ApplicationCommand{
-			Name:                     "sec-dice",
-			Description:              "シークレットダイスロールを実施します。",
-			DefaultMemberPermissions: &INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS,
-			DMPermission:             &BOL_DAT_DM_PERMISSION_DENY,
+			Name:         "sec-dice",
+			Description:  "シークレットダイスロールを実施します。",
+			DMPermission: &BOL_DAT_DM_PERMISSION_DENY,
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Name:        "command",
@@ -142,10 +165,9 @@ var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
 	},
 	{"Cthulhu", "sec-skill", cthulhu.CmdSecretLinkRoll, // シークレット技能ロール
 		discordgo.ApplicationCommand{
-			Name:                     "sec-skill",
-			Description:              "シークレット技能ロールを実施します。",
-			DefaultMemberPermissions: &INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS,
-			DMPermission:             &BOL_DAT_DM_PERMISSION_DENY,
+			Name:         "sec-skill",
+			Description:  "シークレット技能ロールを実施します。",
+			DMPermission: &BOL_DAT_DM_PERMISSION_DENY,
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Name:        "command",
@@ -158,9 +180,9 @@ var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
 	},
 }
 
-// CmdHandleFuncTable テキストコマンドハンドラテーブル
+// テキストコマンドハンドラテーブル
 var CmdHandleFuncTable = []CmdHandleFuncStruct{
-	{"Cthulhu", "regchara", cthulhu.CmdRegistryCharacter, // キャラシート連携処理
+	{"Cthulhu", "regchara", cthulhu.CmdRegistryCharacter, // キャラクターシート連携処理
 		discordgo.ApplicationCommand{},
 	},
 	{"Cthulhu", "check", cthulhu.CmdCharaNumCheck, // 能力値確認処理
@@ -183,25 +205,17 @@ var CmdHandleFuncTable = []CmdHandleFuncStruct{
 	// TODO: 実装中 {"Cthulhu", "showstat", cthulhu.CmdShowStatistics}, // ダイスロール統計表示処理
 }
 
-// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
-// core→各システムキャラクターデータ取得関数コンフィグ
-// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
-// CharacterDataGetFuncStruct キャラクターデータ取得関数用構造体
-type CharacterDataGetFuncStruct struct {
-	System   string
-	DataName string
-	Function core.CharacterDataGetFunc
-}
-
-// CharacterDataGetFuncTable キャラクターデータ取得関数テーブル
+// キャラクターデータ取得関数テーブル
 var CharacterDataGetFuncTable = []CharacterDataGetFuncStruct{
 	{"Cthulhu", "CharacterName", cthulhu.GetCharacterName},
 	{"Cthulhu", "CSheetUrl", cthulhu.GetCharacterSheetUrl},
 }
 
-// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
 // core→各システムセッション復元関数コンフィグ
-// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
 var SessionRestoreFuncTable = map[string]core.SessionRestoreFunc{
 	"Cthulhu": cthulhu.JobRestoreSession,
 }
+
+/****************************************************************************/
+/* 関数定義                                                                 */
+/****************************************************************************/
