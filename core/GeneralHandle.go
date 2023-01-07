@@ -6,7 +6,23 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// CmdShowVersion バージョン情報確認ハンドラ
+/****************************************************************************/
+/* 内部型定義                                                               */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 内部定数定義                                                             */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 関数定義                                                                 */
+/****************************************************************************/
+
+// バージョン情報確認ハンドラ
 func CmdShowVersion(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var returnMes string
 	var returnMesColor int
@@ -40,7 +56,7 @@ func CmdShowVersion(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	return handlerResult
 }
 
-// CmdCreateSession 親セッション生成ハンドラ
+// 親セッション生成ハンドラ
 func CmdCreateSession(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var forced string
 	var system string
@@ -127,7 +143,7 @@ func CmdCreateSession(cs *Session, md MessageData) (handlerResult HandlerResult)
 	return handlerResult
 }
 
-// CmdConnectSession 親セッション接続ハンドラ
+// 親セッション接続ハンドラ
 func CmdConnectSession(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var returnMes string
 	var returnMesColor int
@@ -169,7 +185,7 @@ func CmdConnectSession(cs *Session, md MessageData) (handlerResult HandlerResult
 	return handlerResult
 }
 
-// CmdStoreSession セッション保存ハンドラ
+// セッション保存ハンドラ
 func CmdStoreSession(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var returnMes string
 	var returnMesColor int
@@ -205,7 +221,7 @@ func CmdStoreSession(cs *Session, md MessageData) (handlerResult HandlerResult) 
 	return handlerResult
 }
 
-// CmdRestoreSession セッション復元ハンドラ
+// セッション復元ハンドラ
 func CmdRestoreSession(cs *Session, md MessageData) (handlerResult HandlerResult) {
 	var returnMes string
 	var returnMesColor int

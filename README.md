@@ -81,14 +81,14 @@ go build
 
 ## Nodens独自にサポートしているCoC用テキストコマンド
 
-|コマンド      |引数                  |使用例                          |説明                                                             |演算機能の可否|演算機能の使用例|
-|:-------------|:---------------------|:-------------------------------|:----------------------------------------------------------------|:-------------|:-----------------|
-|regchara      |{CHARASHEET_URL}      |`regchara https://charasheet.vampire-blood.net/123456789abcdef`|キャラシートの情報を取得します    |✕            |-                 |
-|check         |{ABILITY_SKILL_NAME}  |`check 聞き耳`                  |能力値もしくは技能値の初期値・開始値・現在値を確認出来ます       |✕            |-                 |
-|ctrl          |{ABILITY_SKILL_NAME} {VAR_NUM} |`ctrl SAN -1`          |能力値もしくは技能値を加算/減算します                            |○            |`ctrl HP -(1d2+1)`|
-|roll          |{ABILITY_SKILL_NAME}  |`roll 聞き耳`                   |S=5, F=95で1d100を技能ロールを行います                           |○            |`roll DEX*5`      |
-|Sroll         |{ABILITY_SKILL_NAME}  |`Sroll 聞き耳`                  |S=5, F=95で1d100のシークレット技能ロールを行います               |○            |`Sroll 聞き耳+20` |
-|sanc          |{SUCCESS} {FAIL}      |`sanc 1 1d2`                    |SAN値チェックロールおよびSAN値の加算/減算処理を実施します        |○            |`sanc 1 1d2+1`    |
+|コマンド      |引数                  |使用例                          |説明                                                               |演算機能の可否|演算機能の使用例|
+|:-------------|:---------------------|:-------------------------------|:------------------------------------------------------------------|:-------------|:-----------------|
+|regchara      |{CHARASHEET_URL}      |`regchara https://charasheet.vampire-blood.net/123456789abcdef`|キャラクターシートの情報を取得します|✕            |-                 |
+|check         |{ABILITY_SKILL_NAME}  |`check 聞き耳`                  |能力値もしくは技能値の初期値・開始値・現在値を確認出来ます         |✕            |-                 |
+|ctrl          |{ABILITY_SKILL_NAME} {VAR_NUM} |`ctrl SAN -1`          |能力値もしくは技能値を加算/減算します                              |○            |`ctrl HP -(1d2+1)`|
+|roll          |{ABILITY_SKILL_NAME}  |`roll 聞き耳`                   |S=5, F=95で1d100を技能ロールを行います                             |○            |`roll DEX*5`      |
+|Sroll         |{ABILITY_SKILL_NAME}  |`Sroll 聞き耳`                  |S=5, F=95で1d100のシークレット技能ロールを行います                 |○            |`Sroll 聞き耳+20` |
+|sanc          |{SUCCESS} {FAIL}      |`sanc 1 1d2`                    |SAN値チェックロールおよびSAN値の加算/減算処理を実施します          |○            |`sanc 1 1d2+1`    |
 
 ## 各システム共通コマンドの使い方
 
@@ -157,7 +157,7 @@ Bot: @User : (1D100<=50) ＞ 71 ＞ 失敗
 ### Case C-1. キャラクターシート連携
 
 ※同一チャネルでG-1もしくはG-2が実行済み前提  
-※キャラシートは [キャラクター保管所 様](https://charasheet.vampire-blood.net/) で作成し，保存後のURLを引数として指定してください
+※キャラクターシートは [キャラクター保管所 様](https://charasheet.vampire-blood.net/) で作成し，保存後のURLを引数として指定してください
 
 ```text
 User: regchara https://charasheet.vampire-blood.net/123456789abcdef

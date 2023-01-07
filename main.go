@@ -36,7 +36,7 @@ func main() {
 		core.AddCmdHandler(handle.System, handle.Command, handle.Function)
 	}
 
-	// キャラデータ取得関数登録
+	// キャラクターデータ取得関数登録
 	for _, cdFunc := range config.CharacterDataGetFuncTable {
 		core.AddCharacterDataGetFunc(cdFunc.System, cdFunc.DataName, cdFunc.Function)
 	}
@@ -57,7 +57,7 @@ func main() {
 	// スラッシュコマンドハンドラ登録
 	for _, handle := range config.SlashCmdHandleFuncTable {
 		core.AddSlashCmdHandler(handle.System, handle.Command, handle.Function)
-		discordDriver.SetSlashCmdHandleFunc(handle.System, handle.Function, handle.SlashCommandData)
+		discordDriver.AddSlashCmdData(handle.System, handle.SlashCommandData)
 	}
 
 	// セッション開始

@@ -11,28 +11,23 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// DiceResultLogOfCthulhu ダイスロール実行ログ型
-type DiceResultLogOfCthulhu struct {
-	Player  core.NaID
-	Time    string
-	Command string
-	Result  string
-}
+/****************************************************************************/
+/* 内部型定義                                                               */
+/****************************************************************************/
 
-// DiceStatisticsOfCthulhu ダイスロール統計型
-type DiceStatisticsOfCthulhu struct {
-	Player   core.NaID
-	Critical []string
-	Special  []string
-	Success  []string
-	Fail     []string
-	Fumble   []string
-}
+/****************************************************************************/
+/* 内部定数定義                                                             */
+/****************************************************************************/
 
-// DiceResultLogOfCthulhus ダイスロール実行ログ格納変数
-var DiceResultLogOfCthulhus = []DiceResultLogOfCthulhu{}
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
 
-// CmdRegistryCharacter キャラシ連携ハンドラ
+/****************************************************************************/
+/* 関数定義                                                                 */
+/****************************************************************************/
+
+// キャラクターシート連携ハンドラ
 func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var cd *CharacterOfCthulhu
 	var urlStr string
@@ -44,7 +39,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 	} else {
 		urlStr = md.Options[0].Value
 		if core.CheckExistSession(md.ChannelID) == true {
-			/* 親セッションでキャラ登録コマンドが来た場合，PCとして登録する */
+			/* 親セッションでキャラクター登録コマンドが来た場合，PCとして登録する */
 			if core.CheckExistCharacter(md.ChannelID, md.AuthorID) == true {
 				returnMes = "Character already exists."
 				handlerResult.Error = errors.New(returnMes)
@@ -60,7 +55,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 				}
 			}
 		} else if core.GetParentIDFromChildID(md.ChannelID) != "" {
-			/* 子セッションでキャラ登録コマンドが来た場合，NPCとして登録する */
+			/* 子セッションでキャラクター登録コマンドが来た場合，NPCとして登録する */
 			if core.CheckExistNPCharacter(core.GetParentIDFromChildID(md.ChannelID), md.AuthorID) == true {
 				returnMes = "Character already exists."
 				handlerResult.Error = errors.New(returnMes)
@@ -93,7 +88,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 		handlerResult.Normal.Content += "**[年 齢]** " + strconv.Itoa(cd.Personal.Age) + "歳\n"
 		handlerResult.Normal.Content += "**[性 別]** " + cd.Personal.Sex + "\n"
 		handlerResult.Normal.Content += "**[職 業]** " + cd.Personal.Job + "\n"
-		for _, cdan := range CdAbilityNameList {
+		for _, cdan := range GetCdAbilityNameList() {
 			a := cd.Ability[cdan]
 			if a.Now == a.Init {
 				handlerResult.Normal.Content += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + "\n"
@@ -140,7 +135,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 				Inline: false,
 			})
 
-		for _, cdan := range CdAbilityNameList {
+		for _, cdan := range GetCdAbilityNameList() {
 			a := cd.Ability[cdan]
 			if a.Now == a.Init {
 				fields = append(fields,
@@ -181,7 +176,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 	return handlerResult
 }
 
-// CmdCharaNumCheck 能力値確認ハンドラ
+// 能力値確認ハンドラ
 func CmdCharaNumCheck(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var skillName string
 	var initNum string
@@ -266,7 +261,7 @@ func CmdCharaNumCheck(cs *core.Session, md core.MessageData) (handlerResult core
 	return handlerResult
 }
 
-// CmdCharaNumControl 能力値操作ハンドラ
+// 能力値操作ハンドラ
 func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var targetSkill string
 	var oldNum string
@@ -385,7 +380,7 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 	return handlerResult
 }
 
-// CmdLinkRoll キャラシ連携ダイスロール共通処理
+// キャラクターシート連携ダイスロール共通処理
 func jobLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var rollResult core.BCDiceRollResult
 	var command string
@@ -462,13 +457,13 @@ func jobLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.Hand
 	return handlerResult
 }
 
-// CmdLinkRoll キャラシ連携ダイスロールハンドラ
+// キャラクターシート連携ダイスロールハンドラ
 func CmdLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	handlerResult = jobLinkRoll(cs, md)
 	return handlerResult
 }
 
-// CmdSecretLinkRoll キャラシ連携シークレットダイスロールハンドラ
+// キャラクターシート連携シークレットダイスロールハンドラ
 func CmdSecretLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	handlerResult = jobLinkRoll(cs, md)
 	/* 有効にするメッセージタイプ */
@@ -526,7 +521,7 @@ func CmdSecretDiceRoll(cs *core.Session, md core.MessageData) (handlerResult cor
 	return handlerResult
 }
 
-// CmdSanCheckRoll SAN値チェック処理ハンドラ
+// SAN値チェック処理ハンドラ
 func CmdSanCheckRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var successCommand string
 	var failedCommand string
@@ -645,78 +640,7 @@ func CmdSanCheckRoll(cs *core.Session, md core.MessageData) (handlerResult core.
 	return handlerResult
 }
 
-// CmdShowStatistics ダイスロール統計表示処理
-func CmdShowStatistics(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
-	var diceResultLogs = core.GetDiceResultLogs()
-	var diceResultStatistics = map[string]DiceStatisticsOfCthulhu{}
-
-	// 共通ダイスの集計
-	for _, drl := range diceResultLogs {
-		drs, isExist := diceResultStatistics[drl.Player.ID]
-
-		if isExist == false {
-			drs = DiceStatisticsOfCthulhu{}
-		}
-
-		if drs.Player.ID == "" {
-			drs.Player.ID = drl.Player.ID
-			drs.Player.Name = drl.Player.Name
-		}
-		if strings.Contains(drl.Result, "決定的成功") {
-			drs.Critical = append(drs.Critical, drl.Command)
-		} else if strings.Contains(drl.Result, "致命的失敗") {
-			drs.Fumble = append(drs.Fumble, drl.Command)
-		} else {
-
-		}
-
-		diceResultStatistics[drl.Player.ID] = drs
-	}
-
-	// クトゥルフダイスの集計
-	for _, drl := range DiceResultLogOfCthulhus {
-		drs, isExist := diceResultStatistics[drl.Player.ID]
-
-		if isExist == false {
-			drs = DiceStatisticsOfCthulhu{}
-		}
-
-		if diceResultStatistics[drl.Player.ID].Player.ID == "" {
-			drs.Player.ID = drl.Player.ID
-			drs.Player.Name = drl.Player.Name
-		}
-		if strings.Contains(drl.Result, "決定的成功") {
-			drs.Critical = append(drs.Critical, drl.Command)
-		} else if strings.Contains(drl.Result, "致命的失敗") {
-			drs.Fumble = append(drs.Fumble, drl.Command)
-		} else {
-
-		}
-
-		diceResultStatistics[drl.Player.ID] = drs
-	}
-
-	// 集計結果の構築
-
-	if 0 < len(diceResultStatistics) {
-		handlerResult.Normal.Content = "\n===================="
-		for _, drs := range diceResultStatistics {
-			handlerResult.Normal.Content += "\n【" + drs.Player.Name + "】\n"
-			if len(drs.Critical) > 0 {
-				handlerResult.Normal.Content += "●決定的成功：\n"
-				handlerResult.Normal.Content += strings.Join(drs.Critical, ", ")
-				handlerResult.Normal.Content += "\n"
-			}
-			if len(drs.Fumble) > 0 {
-				handlerResult.Normal.Content += "●致命的失敗：\n"
-				handlerResult.Normal.Content += strings.Join(drs.Fumble, ", ")
-				handlerResult.Normal.Content += "\n"
-			}
-		}
-		handlerResult.Normal.Content += "====================\n"
-	} else {
-		handlerResult.Normal.Content += "No data."
-	}
-
-	return handlerResult
-}
+// ダイスロール統計表示処理
+//func CmdShowStatistics(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
+//
+//}

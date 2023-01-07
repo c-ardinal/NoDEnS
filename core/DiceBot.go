@@ -8,106 +8,44 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// DiceResultLog ダイスロール実行ログ型
-type DiceResultLog struct {
-	Player  NaID
-	Time    string
-	Command string
-	Result  string
-}
+/****************************************************************************/
+/* 内部型定義                                                               */
+/****************************************************************************/
 
-// MessageData ハンドラに渡すメッセージのデータ
-type MessageData struct {
-	ChannelID     string
-	GuildID       string
-	MessageID     string
-	AuthorID      string
-	AuthorName    string
-	MessageString string
-	Command       string
-	Options       []CommandOption
-}
+/****************************************************************************/
+/* 内部定数定義                                                             */
+/****************************************************************************/
 
-// CommandOption コマンドオプション情報
-type CommandOption struct {
-	Name  string
-	Value string
-}
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
 
-// HandlerResult ハンドラの戻りオブジェクト
-type HandlerResult struct {
-	Normal MessageTemplate
-	Secret MessageTemplate
-	Error  error
-}
-
-// MessageTemplate ユーザに返すメッセージの共通型
-type MessageTemplate struct {
-	EnableType int
-	Content    string
-	Embed      *discordgo.MessageEmbed
-}
-
-const (
-	EnNoMessage int = 0
-	//EnContent 文字によるメッセージ返却を行う(デフォルト)
-	EnContent int = 1
-	//EnEmbed Embedによるメッセージ返却を行う
-	EnEmbed int = 2
-)
-
-const (
-	EnColorRed    int = 0xFF0000
-	EnColorYellow int = 0xFFFF00
-	EnColorGreen  int = 0x00FF00
-)
-
-// CmdHandleFunc コマンドハンドラ型
-type CmdHandleFunc func(cs *Session, md MessageData) (handlerResult HandlerResult)
-
-// ExecuteCmd CmdHandleFunc実行処理
-func (f CmdHandleFunc) ExecuteCmd(cs *Session, md MessageData) (handlerResult HandlerResult) {
-	return f(cs, md)
-}
-
-// CharacterDataGetFunc キャラデータ取得関数型
-type CharacterDataGetFunc func(cd interface{}) string
-
-// ExecuteCharacterDataGet CharacterDataGetFunc実行処理
-func (f CharacterDataGetFunc) ExecuteCharacterDataGet(cd interface{}) string {
-	return f(cd)
-}
-
-// SessionRestoreFunc セッション復元関数型
-type SessionRestoreFunc func(ses *Session) bool
-
-// ExecuteSessionRestore SessionRestoreFunc実行処理
-func (f SessionRestoreFunc) ExecuteSessionRestore(ses *Session) bool {
-	return f(ses)
-}
-
-// diceResultLogs ダイスロール実行ログ格納変数
+// ダイスロール実行ログ格納変数
 var diceResultLogs = []DiceResultLog{}
 
-// slashCmdHandleMap スラッシュコマンドハンドル群登録用マップ
+// スラッシュコマンドハンドル群登録用マップ
 var slashCmdHandleMap = map[string]map[string]CmdHandleFunc{}
 
-// cmdHandleMap テキストコマンドハンドル群登録用マップ
+// テキストコマンドハンドル群登録用マップ
 var cmdHandleMap = map[string]map[string]CmdHandleFunc{}
 
-// cdGetFuncMap キャラデータ取得関数群登録用マップ
+// キャラクターデータ取得関数群登録用マップ
 var cdGetFuncMap = map[string]map[string]CharacterDataGetFunc{}
 
-// SessionRestoreFuncTable セッション復元関数群登録用マップ
+// セッション復元関数群登録用マップ
 var SessionRestoreFuncTable = map[string]SessionRestoreFunc{}
 
-// AddSlashCmdHandler スラッシュコマンドハンドラ登録処理
+// スラッシュコマンドハンドラ登録処理
 func AddSlashCmdHandler(system string, cmd string, handler CmdHandleFunc) {
 	if slashCmdHandleMap[system] == nil {
 		slashCmdHandleMap[system] = make(map[string]CmdHandleFunc)
 	}
 	slashCmdHandleMap[system][cmd] = handler
 }
+
+/****************************************************************************/
+/* 関数定義                                                                 */
+/****************************************************************************/
 
 // ExecuteCmdHandler スラッシュコマンドハンドラ実行処理
 func ExecuteSlashCmdHandler(md MessageData) (handlerResult HandlerResult) {
@@ -226,7 +164,7 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 	return handlerResult
 }
 
-// AddCharacterDataGetFunc キャラデータ取得関数登録処理
+// キャラクターデータ取得関数登録処理
 func AddCharacterDataGetFunc(system string, dataName string, getFunc CharacterDataGetFunc) {
 	if cdGetFuncMap[system] == nil {
 		cdGetFuncMap[system] = make(map[string]CharacterDataGetFunc)
@@ -234,12 +172,12 @@ func AddCharacterDataGetFunc(system string, dataName string, getFunc CharacterDa
 	cdGetFuncMap[system][dataName] = getFunc
 }
 
-// SetRestoreFunc セッション復元関数群登録処理
+// セッション復元関数群登録処理
 func SetRestoreFunc(funcmap map[string]SessionRestoreFunc) {
 	SessionRestoreFuncTable = funcmap
 }
 
-// GetCharacterDataGetFuncキャラデータ取得関数登録処理
+// キャラクターデータ取得関数登録処理
 func GetCharacterDataGetFunc(system string, dataName string) CharacterDataGetFunc {
 	var result CharacterDataGetFunc = nil
 	if _, exist := cdGetFuncMap[system]; exist == true {
@@ -250,7 +188,7 @@ func GetCharacterDataGetFunc(system string, dataName string) CharacterDataGetFun
 	return result
 }
 
-// GetDiceResultLogs 代スクロール実行ログ取得処理
+// ダイスロール実行ログ取得処理
 func GetDiceResultLogs() []DiceResultLog {
 	return diceResultLogs
 }

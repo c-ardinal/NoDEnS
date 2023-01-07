@@ -10,13 +10,23 @@ import (
 	"strings"
 )
 
-// BCDiceVersionResult BCDiceバージョン情報格納構造体
-type BCDiceVersionResult struct {
-	API    string `json:"api"`
-	BCDice string `json:"bcdice"`
-}
+/****************************************************************************/
+/* 内部型定義                                                               */
+/****************************************************************************/
 
-// ExecuteVersionCheck BCDiceバージョン情報取得処理
+/****************************************************************************/
+/* 内部定数定義                                                             */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 関数定義                                                                 */
+/****************************************************************************/
+
+// BCDiceバージョン情報取得処理
 func ExecuteVersionCheck(endpoint string) (vr BCDiceVersionResult, err error) {
 	urlStr := endpoint + "/version"
 	resp, err := http.Get(urlStr)
@@ -33,19 +43,7 @@ func ExecuteVersionCheck(endpoint string) (vr BCDiceVersionResult, err error) {
 	return vr, nil
 }
 
-// BCDiceSystemsResult BCDiceシステム一覧取得結果格納構造体
-type BCDiceSystemsResult struct {
-	Systems []BCDiceSystem `json:"game_system"`
-}
-
-// BCDiceSystem BCDiceシステム情報格納構造体
-type BCDiceSystem struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	SortKey string `json:"sort_key"`
-}
-
-// ExecuteGetSystems BCDiceシステム一覧取得
+// BCDiceシステム一覧取得
 func ExecuteGetSystems(endpoint string) (sr BCDiceSystemsResult, err error) {
 	urlStr := endpoint + "/game_system"
 	resp, err := http.Get(urlStr)
@@ -62,7 +60,7 @@ func ExecuteGetSystems(endpoint string) (sr BCDiceSystemsResult, err error) {
 	return sr, nil
 }
 
-// CheckContainsSystem BCDiceシステム対応有無チェック
+// BCDiceシステム対応有無チェック
 func CheckContainsSystem(endpoint string, system string) (result bool) {
 	systemsList, err := ExecuteGetSystems(endpoint)
 	if err == nil {
@@ -76,26 +74,7 @@ func CheckContainsSystem(endpoint string, system string) (result bool) {
 	return false
 }
 
-// BCDiceRollResult ダイスロール実行結果格納構造体
-type BCDiceRollResult struct {
-	Ok       bool   `json:"ok"`
-	Result   string `json:"text"`
-	Secret   bool   `json:"secret"`
-	Success  bool   `json:"success"`
-	Failure  bool   `json:"failure"`
-	Critical bool   `json:"critical"`
-	Fumble   bool   `json:"fumble"`
-	Dices    []Dice `json:"rands"`
-}
-
-// Dice ダイス情報格納構造体
-type Dice struct {
-	Kind  string `json:"kind"`
-	Faces int    `json:"sides"`
-	Value int    `json:"value"`
-}
-
-// ExecuteDiceRollAndCalc ダイスロール+演算実行
+// ダイスロール+演算実行
 func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCDiceRollResult, err error) {
 	/* 不等号を堺に文字列分割 */
 	rep := regexp.MustCompile("(.+)(<=|>=|=|>|<)(.+)")
@@ -161,7 +140,7 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 	return rr, err
 }
 
-// ExecuteDiceRoll ダイスロール実行
+// ダイスロール実行
 func ExecuteDiceRoll(endpoint string, system string, dice string) (rr BCDiceRollResult, err error) {
 	urlStr := endpoint + "/game_system/" + system + "/roll?command=" + url.QueryEscape(dice)
 	resp, err := http.Get(urlStr)
@@ -179,7 +158,7 @@ func ExecuteDiceRoll(endpoint string, system string, dice string) (rr BCDiceRoll
 	return rr, nil
 }
 
-// CalcDicesSum ダイス合計値算出
+// ダイス合計値算出
 func CalcDicesSum(dices []Dice) string {
 	var diceSum int
 	for _, d := range dices {

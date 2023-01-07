@@ -9,9 +9,26 @@ import (
 	"github.com/golang-collections/collections/stack"
 )
 
+/****************************************************************************/
+/* 内部型定義                                                               */
+/****************************************************************************/
+
+// トークン型
 type tokenTypeT int8
 
-// Token types
+// トークン情報構造体
+type tokenT struct {
+	token     string
+	tokentype tokenTypeT
+	pin       int8
+	pst       int8
+}
+
+/****************************************************************************/
+/* 内部定数定義                                                             */
+/****************************************************************************/
+
+// トークン型ダイナミクス定義
 const (
 	ESCAPE tokenTypeT = iota
 	NUMBER
@@ -21,13 +38,11 @@ const (
 	RIGHTPAREN
 )
 
-type tokenT struct {
-	token     string
-	tokentype tokenTypeT
-	pin       int8
-	pst       int8
-}
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
 
+// トークン情報定義
 var tokensDict = map[string]tokenT{
 	"+":   {"+", OPERATOR, 4, 5},
 	"-":   {"-", OPERATOR, 4, 5},
@@ -40,7 +55,11 @@ var tokensDict = map[string]tokenT{
 	"$$$": {"$$$", ESCAPE, -1, -1},
 }
 
-// CalcStr2Ans 文字列として受け取った計算式を計算し，計算結果を文字列として返す
+/****************************************************************************/
+/* 関数定義                                                                 */
+/****************************************************************************/
+
+// 文字列として受け取った計算式を計算し，計算結果を文字列として返す
 func CalcStr2Ans(s string, system string) (result string, numOnlyFormula string, err error) {
 	var numOnlyTokens []tokenT
 	err = nil
@@ -66,6 +85,7 @@ func CalcStr2Ans(s string, system string) (result string, numOnlyFormula string,
 	return result, numOnlyFormula, err
 }
 
+// 文字列をトークン列へ変換する
 func convStr2Tokens(str string) (result []tokenT) {
 	/* 文字列をトークン列に変換するために整理 */
 	strTrimSpaces := strings.Trim(str, " ")
@@ -99,6 +119,7 @@ func convStr2Tokens(str string) (result []tokenT) {
 	return result
 }
 
+// トークン列を評価し、構文誤りが無いかチェックする
 func evalTokens(tknArray []tokenT) (result bool, errorCol int, errorMes string, isContCmd bool) {
 	var parenPairNum int = 0
 
@@ -177,6 +198,7 @@ func evalTokens(tknArray []tokenT) (result bool, errorCol int, errorMes string, 
 	return result, errorCol, errorMes, isContCmd
 }
 
+// トークン列をシャンティングヤード法に従って並び替える
 func convTokens2ShuntingYardTokens(tknArray []tokenT) (result []tokenT) {
 	var convedTokens []tokenT
 	var stk = stack.New()
@@ -199,6 +221,7 @@ func convTokens2ShuntingYardTokens(tknArray []tokenT) (result []tokenT) {
 	return result
 }
 
+// トークンスタックの操作を行う
 func convTokens(t tokenT, stk *stack.Stack, result *[]tokenT) {
 	if t.pin > stk.Peek().(tokenT).pst {
 		stk.Push(t)
@@ -213,6 +236,7 @@ func convTokens(t tokenT, stk *stack.Stack, result *[]tokenT) {
 	}
 }
 
+// ダイスコマンドを含んだトークン列を、数字のみのトークン列へ変換する
 func convDiceTokens2NumTokens(tknArray []tokenT, system string) (result []tokenT, err error) {
 	var rollResult BCDiceRollResult
 	result = tknArray
@@ -231,6 +255,7 @@ func convDiceTokens2NumTokens(tknArray []tokenT, system string) (result []tokenT
 	return result, err
 }
 
+// トークン列を元に、演算を実行する
 func calFromTokens(tknArray []tokenT) (result string, err error) {
 	var stk = stack.New()
 
