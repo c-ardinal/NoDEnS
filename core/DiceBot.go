@@ -19,6 +19,7 @@ type DiceResultLog struct {
 // MessageData ハンドラに渡すメッセージのデータ
 type MessageData struct {
 	ChannelID     string
+	GuildID       string
 	MessageID     string
 	AuthorID      string
 	AuthorName    string
@@ -48,10 +49,17 @@ type MessageTemplate struct {
 }
 
 const (
+	EnNoMessage int = 0
 	//EnContent 文字によるメッセージ返却を行う(デフォルト)
-	EnContent int = 0
+	EnContent int = 1
 	//EnEmbed Embedによるメッセージ返却を行う
-	EnEmbed int = 1
+	EnEmbed int = 2
+)
+
+const (
+	EnColorRed    int = 0xFF0000
+	EnColorYellow int = 0xFFFF00
+	EnColorGreen  int = 0x00FF00
 )
 
 // CmdHandleFunc コマンドハンドラ型
@@ -136,7 +144,7 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 
 // executeCmdHandlerGeneral コマンドハンドラ共通処理
 func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]CmdHandleFunc) (handlerResult HandlerResult) {
-	/* DiscordのチャネルIDからセッション情報を取得 */
+	/* チャネルIDからセッション情報を取得 */
 	var targetID string = ""
 	if GetParentIDFromChildID(md.ChannelID) != "" {
 		targetID = GetParentIDFromChildID(md.ChannelID)
@@ -173,7 +181,7 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 				/* Embedメッセージ */
 				handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 					Description: handlerResult.Normal.Content,
-					Color:       0xff0000, // Red
+					Color:       EnColorRed,
 				}
 			} else {
 				if rollResult.Result != "" {
@@ -184,7 +192,7 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 					/* Embedメッセージ */
 					handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 						Description: handlerResult.Normal.Content,
-						Color:       0x00ff00, // Green
+						Color:       EnColorGreen,
 					}
 				}
 			}
@@ -198,7 +206,7 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 				/* Embedメッセージ */
 				handlerResult.Secret.Embed = &discordgo.MessageEmbed{
 					Title: "SECRET DICE",
-					Color: 0xffff00, // Yellow
+					Color: EnColorYellow,
 				}
 			} else {
 				/* シークレットダイス以外の実行結果を記録 */

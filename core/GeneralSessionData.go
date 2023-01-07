@@ -8,14 +8,14 @@ import (
 
 // Session セッションデータ構造体
 type Session struct {
-	Discord  Discord                `json:"discord"`
+	Chat     Chat                   `json:"chat"`
 	Scenario Scenario               `json:"scenario"`
 	Pc       map[string]interface{} `json:"pc"`
 	Npc      map[string]interface{} `json:"npc"`
 }
 
-// Discord Discord情報構造体
-type Discord struct {
+// Chat Chat情報構造体
+type Chat struct {
 	Parent NaID   `json:"text"`
 	Child  []NaID `json:"private"`
 	Voice  NaID   `json:"voice"`
@@ -43,7 +43,7 @@ func NewSession(chID string, system string, kpName string, kpID string) *Session
 	var newSession Session
 	newSession.Pc = map[string]interface{}{}
 	newSession.Npc = map[string]interface{}{}
-	newSession.Discord.Parent.ID = chID
+	newSession.Chat.Parent.ID = chID
 	newSession.Scenario.System = system
 	newSession.Scenario.Keeper.Name = kpName
 	newSession.Scenario.Keeper.ID = kpID
@@ -147,9 +147,9 @@ func GetCharacterData(chID string, plID string, dataName string) string {
 // GetParentIDFromChildID 親セッションID取得処理
 func GetParentIDFromChildID(childID string) string {
 	for _, ps := range trpgSession {
-		for _, cid := range (*ps).Discord.Child {
+		for _, cid := range (*ps).Chat.Child {
 			if childID == cid.ID {
-				return (*ps).Discord.Parent.ID
+				return (*ps).Chat.Parent.ID
 			}
 		}
 	}

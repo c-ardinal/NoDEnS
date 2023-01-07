@@ -1,0 +1,272 @@
+package discordDriver
+
+import (
+	"Nodens/core"
+	"log"
+
+	"github.com/bwmarrin/discordgo"
+)
+
+// CmdHandleFuncStruct コマンドハンドラテーブル用構造体
+type CmdHandleFuncStruct struct {
+	System           string
+	Function         core.CmdHandleFunc
+	SlashCommandData discordgo.ApplicationCommand
+}
+
+var session *discordgo.Session
+var registeredGuildIds []string
+var slashCmdHandleFuncList []CmdHandleFuncStruct
+
+// JobNewSession Discordのセッションを生成する
+func JobNewDiscordSession() (ses *discordgo.Session, err error) {
+	ses, err = discordgo.New(core.GetConfig().BotToken)
+	if err != nil {
+		log.Panicf("[Error]: Cannot create discord instance : '%v'", err)
+	}
+	session = ses
+	return ses, err
+}
+
+// GetDiscordSession Discordのセッションを返す
+func GetDiscordSession() *discordgo.Session {
+	return session
+}
+
+func SetSlashCmdHandleFunc(system string, handleFunc core.CmdHandleFunc, appCommand discordgo.ApplicationCommand) {
+	newData := CmdHandleFuncStruct{
+		System:           system,
+		Function:         handleFunc,
+		SlashCommandData: appCommand,
+	}
+	slashCmdHandleFuncList = append(slashCmdHandleFuncList, newData)
+}
+
+// onMessageCreate メッセージ受信時処理
+func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
+	var md core.MessageData = core.MessageData{
+		ChannelID:     message.ChannelID,
+		GuildID:       message.GuildID,
+		MessageID:     message.ID,
+		AuthorID:      message.Author.ID,
+		AuthorName:    message.Author.Username,
+		MessageString: message.Content,
+	}
+
+	//var replyObject discordgo.MessageSend
+
+	log.Printf("[Event]: Message received. ChannelId:%20s Author:%20s > %s\n", md.ChannelID, md.AuthorName, md.MessageString)
+
+	if md.AuthorID != core.GetConfig().BotID {
+		handlerResult := core.ExecuteCmdHandler(md)
+		if handlerResult.Error != nil {
+			log.Printf("[Error]: %v", handlerResult.Error)
+		}
+
+		ref := discordgo.MessageReference{
+			MessageID: md.MessageID,
+			ChannelID: md.ChannelID,
+		}
+
+		// キャラ名取得
+		characterName := core.GetCharacterData(md.ChannelID, md.AuthorID, "CharacterName")
+		cSheetUrl := core.GetCharacterData(md.ChannelID, md.AuthorID, "CSheetUrl")
+		if characterName != "" {
+			characterName = "【" + characterName + "】 "
+		}
+
+		/* 通常メッセージの送信 */
+		if handlerResult.Normal.EnableType == core.EnContent {
+			if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
+				handlerResult.Normal.Content = characterName + handlerResult.Normal.Content
+				session.ChannelMessageSendReply(md.ChannelID, handlerResult.Normal.Content, &ref)
+			}
+		} else if handlerResult.Normal.EnableType == core.EnEmbed {
+			embedAuthor := &discordgo.MessageEmbedAuthor{
+				Name: characterName,
+				URL:  cSheetUrl,
+			}
+			handlerResult.Normal.Embed.Author = embedAuthor
+			session.ChannelMessageSendEmbedReply(md.ChannelID, handlerResult.Normal.Embed, &ref)
+		} else {
+			/* Non process */
+		}
+
+		/* シークレットメッセージの送信 */
+		if handlerResult.Error == nil {
+			if handlerResult.Secret.EnableType == core.EnContent {
+				if handlerResult.Secret.Content != "" {
+					handlerResult.Secret.Content = "<@" + md.AuthorID + ">" + handlerResult.Secret.Content
+					session.ChannelMessageSend(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Content)
+				}
+			} else if handlerResult.Secret.EnableType == core.EnEmbed {
+				messageSend := &discordgo.MessageSend{
+					Content: "<@" + md.AuthorID + ">",
+					Embed:   handlerResult.Secret.Embed,
+				}
+				session.ChannelMessageSendComplex(core.GetParentIDFromChildID(md.ChannelID), messageSend)
+			} else {
+				/* Non process */
+			}
+		}
+	}
+}
+
+// onInteractionCreate インタラクション受診時処理
+func OnInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	// インタラクション送信者情報取得
+	var interactionUser *discordgo.User
+	if interaction.User != nil {
+		interactionUser = interaction.User
+	} else if interaction.Member != nil {
+		interactionUser = interaction.Member.User
+	}
+
+	// スラッシュコマンド情報取得
+	var options []core.CommandOption
+	appCommandData := interaction.Interaction.ApplicationCommandData()
+	for _, opt := range appCommandData.Options {
+		options = append(options, core.CommandOption{
+			Name:  opt.Name,
+			Value: opt.StringValue(),
+		})
+	}
+
+	// 受信メッセージデータを構築
+	var md core.MessageData = core.MessageData{
+		ChannelID:     interaction.ChannelID,
+		GuildID:       interaction.GuildID,
+		MessageID:     interaction.ID,
+		AuthorID:      interactionUser.ID,
+		AuthorName:    interactionUser.Username,
+		MessageString: "",
+		Command:       appCommandData.Name,
+		Options:       options,
+	}
+
+	// コマンド処理実行
+	handlerResult := core.ExecuteSlashCmdHandler(md)
+	if handlerResult.Error != nil {
+		log.Printf("[Error]: %v", handlerResult.Error)
+	}
+
+	// キャラ名取得
+	characterName := core.GetCharacterData(md.ChannelID, md.AuthorID, "CharacterName")
+	cSheetUrl := core.GetCharacterData(md.ChannelID, md.AuthorID, "CSheetUrl")
+	if characterName != "" {
+		characterName = "【" + characterName + "】 "
+	}
+
+	// シークレットメッセージを含む場合、Ephemeralフラグを立てる。
+	var flags discordgo.MessageFlags = 0
+	if handlerResult.Secret.EnableType == core.EnContent || handlerResult.Secret.EnableType == core.EnEmbed {
+		flags = discordgo.MessageFlagsEphemeral
+	}
+
+	/* 通常メッセージの送信 */
+	if handlerResult.Normal.EnableType == core.EnContent {
+		if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
+			handlerResult.Normal.Content = characterName + handlerResult.Normal.Content
+			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Flags:   flags,
+					Content: handlerResult.Normal.Content,
+				},
+			})
+		}
+	} else if handlerResult.Normal.EnableType == core.EnEmbed {
+		embedAuthor := &discordgo.MessageEmbedAuthor{
+			Name: characterName,
+			URL:  cSheetUrl,
+		}
+		handlerResult.Normal.Embed.Author = embedAuthor
+		session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Flags:  flags,
+				Embeds: []*discordgo.MessageEmbed{handlerResult.Normal.Embed},
+			},
+		})
+	} else {
+		/* Non process */
+	}
+
+	/* シークレットメッセージの送信 */
+	if handlerResult.Error == nil {
+		if handlerResult.Secret.EnableType == core.EnContent {
+			if handlerResult.Secret.Content != "" {
+				handlerResult.Secret.Content = "<@" + md.AuthorID + ">" + handlerResult.Secret.Content
+				session.ChannelMessageSend(md.ChannelID, handlerResult.Secret.Content)
+			}
+		} else if handlerResult.Secret.EnableType == core.EnEmbed {
+			messageSend := &discordgo.MessageSend{
+				Content: "<@" + md.AuthorID + ">",
+				Embed:   handlerResult.Secret.Embed,
+			}
+			session.ChannelMessageSendComplex(md.ChannelID, messageSend)
+		} else {
+			/* Non process */
+		}
+	}
+}
+
+// スラッシュコマンド(グローバル)登録
+func JobRegistriesGlobalAppCommands(targetSystem string) {
+	JobRegistriesAppCommands(targetSystem, "")
+}
+
+// スラッシュコマンド登録
+func JobRegistriesAppCommands(targetSystem string, guildId string) {
+	for _, slashCmd := range slashCmdHandleFuncList {
+		if slashCmd.System == targetSystem {
+			cmd, err := session.ApplicationCommandCreate(session.State.User.ID, guildId, &slashCmd.SlashCommandData)
+			if err != nil {
+				log.Panicf("[Error]: Cannot register '%v' command: %v", cmd, err)
+			}
+			log.Printf("[Event]: Command registered '%v'", cmd.Name)
+		}
+	}
+}
+
+// スラッシュコマンド(グローバル)全削除
+func JobDeleteGlobalAppCommands() {
+	JobDeleteAppCommands("")
+}
+
+// スラッシュコマンド(ローカル)全削除
+func JobDeleteLocalAppCommands() {
+	for _, guildId := range registeredGuildIds {
+		JobDeleteAppCommands(guildId)
+	}
+}
+
+// スラッシュコマンド削除
+func JobDeleteAppCommands(guildId string) {
+	registeredCommandList, err := session.ApplicationCommands(session.State.User.ID, guildId)
+	if err == nil {
+		for _, appCommand := range registeredCommandList {
+			err := session.ApplicationCommandDelete(session.State.User.ID, guildId, appCommand.ID)
+			if err != nil {
+				log.Panicf("[Error]: Cannot delete '%v' command: %v", appCommand.Name, err)
+			}
+			log.Printf("[Event]: Command deleted '%v'", appCommand.Name)
+		}
+	}
+}
+
+// CmdCreateSession TRPGセッション生成処理
+func CmdCreateSession(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
+	var system string
+	for _, opt := range md.Options {
+		if opt.Name == "system" {
+			system = opt.Value
+		}
+	}
+	handlerResult = core.CmdCreateSession(cs, md)
+	if handlerResult.Error == nil {
+		JobRegistriesAppCommands(system, md.GuildID)
+		registeredGuildIds = append(registeredGuildIds, md.GuildID)
+	}
+	return handlerResult
+}

@@ -8,8 +8,7 @@ import (
 
 	"Nodens/config"
 	"Nodens/core"
-
-	"github.com/bwmarrin/discordgo"
+	"Nodens/discordDriver"
 )
 
 // configFile デフォルト設定ファイルパス
@@ -17,6 +16,9 @@ var configFile = "SystemConfig.json"
 
 // main メイン関数
 func main() {
+	// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
+	// Discord非依存処理
+	// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
 	// 引数の読み込み
 	if len(os.Args) != 1 {
 		configFile = os.Args[1]
@@ -28,21 +30,6 @@ func main() {
 
 	// 設定ファイルの読み込み
 	core.LoadConfig(configFile)
-
-	// Discordのインスタンス生成
-	discord, err := discordgo.New(core.GetConfig().BotToken)
-	if err != nil {
-		log.Panicf("[Error]: Cannot create discord instance : '%v'", err)
-	}
-
-	// Discordのメッセージハンドラ登録
-	discord.AddHandler(onMessageCreate)
-	discord.AddHandler(onInteractionCreate)
-
-	// スラッシュコマンドハンドラ登録
-	for _, handle := range config.SlashCmdHandleFuncTable {
-		core.AddSlashCmdHandler(handle.System, handle.Command, handle.Function)
-	}
 
 	// テキストコマンドハンドラ登録
 	for _, handle := range config.CmdHandleFuncTable {
@@ -57,22 +44,30 @@ func main() {
 	// セッション復元関数登録
 	core.SetRestoreFunc(config.SessionRestoreFuncTable)
 
+	// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
+	// Discord依存処理
+	// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
+	// Discordのインスタンス生成
+	discord, err := discordDriver.JobNewDiscordSession()
+
+	// Discordのメッセージハンドラ登録
+	discord.AddHandler(discordDriver.OnMessageCreate)
+	discord.AddHandler(discordDriver.OnInteractionCreate)
+
+	// スラッシュコマンドハンドラ登録
+	for _, handle := range config.SlashCmdHandleFuncTable {
+		core.AddSlashCmdHandler(handle.System, handle.Command, handle.Function)
+		discordDriver.SetSlashCmdHandleFunc(handle.System, handle.Function, handle.SlashCommandData)
+	}
+
 	// セッション開始
 	err = discord.Open()
 	if err != nil {
 		log.Panicln(err)
 	}
 
-	// 共通スラッシュコマンドを登録
-	for _, slashCmd := range config.SlashCmdHandleFuncTable {
-		if slashCmd.System == "General" {
-			cmd, err := discord.ApplicationCommandCreate(discord.State.User.ID, core.GetConfig().GuildId, &slashCmd.SlashCommandData)
-			if err != nil {
-				log.Panicf("[Error]: Cannot register '%v' command: %v", cmd, err)
-			}
-			log.Printf("[Event]: Command registered '%v'", cmd.Name)
-		}
-	}
+	// 共通コマンドをスラッシュコマンド(グローバル)として登録
+	discordDriver.JobRegistriesGlobalAppCommands("General")
 
 	// イベントをリッスン
 	log.Println("[Event]: Listening...")
@@ -80,142 +75,9 @@ func main() {
 	signal.Notify(stopBot, os.Interrupt)
 	<-stopBot
 
-	// スラッシュコマンドを全て削除
-	registeredCommandList, err := discord.ApplicationCommands(discord.State.User.ID, "")
-	if err == nil {
-		for _, appCommand := range registeredCommandList {
-			err := discord.ApplicationCommandDelete(discord.State.User.ID, "", appCommand.ID)
-			if err != nil {
-				log.Panicf("[Error]: Cannot delete '%v' command: %v", appCommand.Name, err)
-			}
-			log.Printf("[Event]: Command deleted '%v'", appCommand.Name)
-		}
-	}
+	// スラッシュコマンド(グローバル)を全て削除
+	discordDriver.JobDeleteGlobalAppCommands()
+	discordDriver.JobDeleteLocalAppCommands()
+	// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
 	return
-}
-
-// onMessageCreate メッセージ受信時処理
-func onMessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
-	var md core.MessageData = core.MessageData{
-		ChannelID:     message.ChannelID,
-		MessageID:     message.ID,
-		AuthorID:      message.Author.ID,
-		AuthorName:    message.Author.Username,
-		MessageString: message.Content,
-	}
-
-	//var replyObject discordgo.MessageSend
-
-	log.Printf("[Event]: Message received. ChannelId:%20s Author:%20s > %s\n", md.ChannelID, md.AuthorName, md.MessageString)
-
-	if md.AuthorID != core.GetConfig().BotID {
-		handlerResult := core.ExecuteCmdHandler(md)
-		if handlerResult.Error != nil {
-			log.Printf("[Error]: %v", handlerResult.Error)
-		}
-
-		ref := discordgo.MessageReference{
-			MessageID: md.MessageID,
-			ChannelID: md.ChannelID,
-		}
-
-		characterName := core.GetCharacterData(md.ChannelID, md.AuthorID, "CharacterName")
-		cSheetUrl := core.GetCharacterData(md.ChannelID, md.AuthorID, "CSheetUrl")
-		if characterName != "" {
-			characterName = "【" + characterName + "】 "
-		}
-
-		/* 通常メッセージの送信 */
-		if handlerResult.Normal.EnableType == core.EnContent {
-			if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
-				handlerResult.Normal.Content = characterName + handlerResult.Normal.Content
-				session.ChannelMessageSendReply(md.ChannelID, handlerResult.Normal.Content, &ref)
-			}
-		} else if handlerResult.Normal.EnableType == core.EnEmbed {
-			embedAuthor := &discordgo.MessageEmbedAuthor{
-				Name: characterName,
-				URL:  cSheetUrl,
-			}
-			handlerResult.Normal.Embed.Author = embedAuthor
-			session.ChannelMessageSendEmbedReply(md.ChannelID, handlerResult.Normal.Embed, &ref)
-		} else {
-			/* Non process */
-		}
-
-		/* シークレットメッセージの送信 */
-		if handlerResult.Secret.EnableType == core.EnContent {
-			if handlerResult.Secret.Content != "" {
-				handlerResult.Secret.Content = "<@" + md.AuthorID + ">" + handlerResult.Secret.Content
-				session.ChannelMessageSend(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Content)
-			}
-		} else if handlerResult.Secret.EnableType == core.EnEmbed {
-			messageSend := &discordgo.MessageSend{
-				Content: "<@" + md.AuthorID + ">",
-				Embed:   handlerResult.Secret.Embed,
-			}
-			session.ChannelMessageSendComplex(core.GetParentIDFromChildID(md.ChannelID), messageSend)
-		} else {
-			/* Non process */
-		}
-	}
-}
-
-// onInteractionCreate インタラクション受診時処理
-func onInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
-	// インタラクション送信者情報取得
-	var interactionUser *discordgo.User
-	if interaction.User != nil {
-		interactionUser = interaction.User
-	} else if interaction.Member != nil {
-		interactionUser = interaction.Member.User
-	}
-
-	// スラッシュコマンド情報取得
-	var options []core.CommandOption
-	appCommandData := interaction.Interaction.ApplicationCommandData()
-	for _, opt := range appCommandData.Options {
-		options = append(options, core.CommandOption{
-			Name:  opt.Name,
-			Value: opt.StringValue(),
-		})
-	}
-
-	// 受信メッセージデータを構築
-	var md core.MessageData = core.MessageData{
-		ChannelID:     interaction.ChannelID,
-		MessageID:     interaction.ID,
-		AuthorID:      interactionUser.ID,
-		AuthorName:    interactionUser.Username,
-		MessageString: "",
-		Command:       appCommandData.Name,
-		Options:       options,
-	}
-
-	// コマンド処理実行
-	handlerResult := core.ExecuteSlashCmdHandler(md)
-	if handlerResult.Error != nil {
-		log.Printf("[Error]: %v", handlerResult.Error)
-	}
-
-	/* 通常メッセージの送信 */
-	if handlerResult.Normal.EnableType == core.EnContent {
-		if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
-			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: handlerResult.Normal.Content,
-				},
-			})
-		}
-	} else if handlerResult.Normal.EnableType == core.EnEmbed {
-		session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Embeds: []*discordgo.MessageEmbed{handlerResult.Normal.Embed},
-			},
-		})
-		/* インタラクションをトリガとするシークレットリプライは必要が無いため実装なし */
-	} else {
-		/* Non process */
-	}
 }

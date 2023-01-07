@@ -1,6 +1,7 @@
 package cthulhu
 
 import (
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -39,12 +40,14 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 
 	if len(md.Options) == 0 {
 		returnMes = "Invalid arguments."
+		handlerResult.Error = errors.New(returnMes)
 	} else {
 		urlStr = md.Options[0].Value
 		if core.CheckExistSession(md.ChannelID) == true {
 			/* 親セッションでキャラ登録コマンドが来た場合，PCとして登録する */
 			if core.CheckExistCharacter(md.ChannelID, md.AuthorID) == true {
 				returnMes = "Character already exists."
+				handlerResult.Error = errors.New(returnMes)
 			} else {
 				cas, err := GetCharSheetFromURL(urlStr)
 				if err != nil {
@@ -60,6 +63,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 			/* 子セッションでキャラ登録コマンドが来た場合，NPCとして登録する */
 			if core.CheckExistNPCharacter(core.GetParentIDFromChildID(md.ChannelID), md.AuthorID) == true {
 				returnMes = "Character already exists."
+				handlerResult.Error = errors.New(returnMes)
 			} else {
 				cas, err := GetCharSheetFromURL(urlStr)
 				if err != nil {
@@ -73,6 +77,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 			}
 		} else {
 			returnMes = "Session not found."
+			handlerResult.Error = errors.New(returnMes)
 		}
 	}
 
@@ -104,7 +109,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 	if returnMes != "" {
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Description: returnMes,
-			Color:       0xff0000, // Red
+			Color:       core.EnColorRed,
 		}
 	} else {
 		var fields []*discordgo.MessageEmbedField
@@ -168,7 +173,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Title:  cd.Personal.Name,
 			URL:    urlStr,
-			Color:  0x00ff00, // Green
+			Color:  core.EnColorGreen,
 			Fields: fields,
 		}
 
@@ -186,10 +191,12 @@ func CmdCharaNumCheck(cs *core.Session, md core.MessageData) (handlerResult core
 
 	if len(md.Options[0].Value) == 0 {
 		returnMes = "Invalid arguments."
+		handlerResult.Error = errors.New(returnMes)
 	} else {
 		skillName = md.Options[0].Value
 		if cs == nil {
 			returnMes = "Character not registered."
+			handlerResult.Error = errors.New(returnMes)
 		} else {
 			var chara *CharacterOfCthulhu
 			var exist bool
@@ -225,9 +232,10 @@ func CmdCharaNumCheck(cs *core.Session, md core.MessageData) (handlerResult core
 
 	/* Embedメッセージ */
 	if returnMes != "" {
+		handlerResult.Error = errors.New(returnMes)
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Description: returnMes,
-			Color:       0xff0000, // Red
+			Color:       core.EnColorRed,
 		}
 	} else {
 		var fields []*discordgo.MessageEmbedField
@@ -250,7 +258,7 @@ func CmdCharaNumCheck(cs *core.Session, md core.MessageData) (handlerResult core
 		)
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Title:  "< " + skillName + " >",
-			Color:  0x00ff00, // Green
+			Color:  core.EnColorGreen,
 			Fields: fields,
 		}
 	}
@@ -292,10 +300,12 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 			}
 			if exist == false {
 				returnMes = "Character not found."
+				handlerResult.Error = errors.New(returnMes)
 			} else {
 				oldNum = GetSkillNum(chara, targetSkill, "now")
 				if oldNum == "-1" {
 					returnMes = "Skill not found."
+					handlerResult.Error = errors.New(returnMes)
 				} else {
 					diffRegex := regexp.MustCompile("^[+-]?[0-9]+$")
 					diffCmd = ctrlNum
@@ -343,7 +353,7 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 	if returnMes != "" {
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Description: returnMes,
-			Color:       0xff0000, // Red
+			Color:       core.EnColorRed,
 		}
 	} else {
 		var fields []*discordgo.MessageEmbedField
@@ -367,7 +377,7 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Title:       "< " + targetSkill + " >",
 			Description: rollResultMessage,
-			Color:       0x00ff00, // Green
+			Color:       core.EnColorGreen,
 			Fields:      fields,
 		}
 	}
@@ -375,8 +385,8 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 	return handlerResult
 }
 
-// CmdLinkRoll キャラシ連携ダイスロールハンドラ
-func CmdLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
+// CmdLinkRoll キャラシ連携ダイスロール共通処理
+func jobLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
 	var rollResult core.BCDiceRollResult
 	var command string
 	var err error
@@ -384,27 +394,37 @@ func CmdLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.Hand
 
 	if len(md.Options) == 0 {
 		returnMes = "Invalid arguments."
+		handlerResult.Error = errors.New(returnMes)
 	} else {
 		command = md.Options[0].Value
 		if cs == nil {
-			returnMes = "PC not registered."
+			returnMes = "Character not registered."
+			handlerResult.Error = errors.New(returnMes)
 		} else {
-			pc, exist := (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
-			if exist == false {
-				returnMes = "PC not found."
+			var characterData interface{}
+			if cs.Chat.Parent.ID == md.ChannelID {
+				characterData = (*cs).Pc[md.AuthorID]
+			} else {
+				characterData = (*cs).Npc[md.AuthorID]
+			}
+			if chara, exist := characterData.(*CharacterOfCthulhu); exist == false {
+				returnMes = "Character not found."
+				handlerResult.Error = errors.New(returnMes)
 			} else {
 				diceCmd := "CCB<=" + command
 				exRegex := regexp.MustCompile("[^\\+\\-\\*\\/ 　]+")
 				ignoreRegex := regexp.MustCompile("^[0-9]+$")
 				for _, ex := range exRegex.FindAllString(command, -1) {
 					if ignoreRegex.MatchString(ex) == false {
-						exNum := GetSkillNum(pc, ex, "now")
+						exNum := GetSkillNum(chara, ex, "now")
 						if exNum == "-1" {
 							returnMes = "Skill not found."
+							handlerResult.Error = errors.New(returnMes)
 						} else {
 							diceCmd = strings.Replace(diceCmd, ex, exNum, -1)
 							rollResult, err = core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
 							if err != nil {
+								returnMes = "Server internal error."
 								handlerResult.Error = err
 							} else {
 								/* Non process */
@@ -430,111 +450,79 @@ func CmdLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.Hand
 	if returnMes != "" {
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Description: returnMes,
-			Color:       0xff0000, // Red
+			Color:       core.EnColorRed,
 		}
 	} else {
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Title:       "< " + command + " >",
 			Description: rollResult.Result,
-			Color:       0x00ff00, // Green
+			Color:       core.EnColorGreen,
 		}
 	}
-
-	if (err == nil) && (len(md.Options) > 0) {
-		//const format = "2006/01/02_15:04:05"
-		//parsedTime, _ := mes.Timestamp.Parse()
-		var cthulhuDiceResultLog DiceResultLogOfCthulhu
-
-		cthulhuDiceResultLog.Player.ID = md.AuthorID
-		cthulhuDiceResultLog.Player.Name = md.AuthorName
-		//cthulhuDiceResultLog.Time = parsedTime.Format(format)
-		cthulhuDiceResultLog.Command = command
-		cthulhuDiceResultLog.Result = rollResult.Result
-		DiceResultLogOfCthulhus = append(DiceResultLogOfCthulhus, cthulhuDiceResultLog)
-	}
-
 	return handlerResult
 }
 
-// CmdSecretLinkRoll キャラシ連携Secretダイスロールハンドラ
+// CmdLinkRoll キャラシ連携ダイスロールハンドラ
+func CmdLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
+	handlerResult = jobLinkRoll(cs, md)
+	return handlerResult
+}
+
+// CmdSecretLinkRoll キャラシ連携シークレットダイスロールハンドラ
 func CmdSecretLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
-	var rollResult core.BCDiceRollResult
-	var command string
-	var err error
-	var returnMes string
-
-	if len(md.Options) == 0 {
-		returnMes = "Invalid arguments."
-	} else {
-		command = md.Options[0].Value
-		if cs == nil {
-			returnMes = "NPC not registered."
-		} else {
-			pc, exist := (*cs).Npc[md.AuthorID].(*CharacterOfCthulhu)
-			if exist == false {
-				returnMes = "NPC not found."
-			} else {
-				diceCmd := "SCCB<=" + command
-				exRegex := regexp.MustCompile("[^\\+\\-\\*\\/ 　]+")
-				ignoreRegex := regexp.MustCompile("^[0-9]+$")
-				for _, ex := range exRegex.FindAllString(command, -1) {
-					if ignoreRegex.MatchString(ex) == false {
-						exNum := GetSkillNum(pc, ex, "now")
-						if exNum == "-1" {
-							returnMes = "Skill not found."
-						} else {
-							diceCmd = strings.Replace(diceCmd, ex, exNum, -1)
-							rollResult, err = core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
-							if err != nil {
-								handlerResult.Error = err
-							} else {
-								/* Non process */
-							}
-						}
-					}
-				}
-			}
-		}
+	handlerResult = jobLinkRoll(cs, md)
+	/* 有効にするメッセージタイプ */
+	handlerResult.Secret.EnableType = core.EnEmbed
+	/* テキストメッセージ */
+	handlerResult.Secret.Content = "**SECRET DICE**"
+	/* Embedメッセージ */
+	handlerResult.Secret.Embed = &discordgo.MessageEmbed{
+		Title: "SECRET DICE",
+		Color: core.EnColorYellow,
 	}
+	return handlerResult
+}
 
+// CmdSecretDiceRoll シークレットダイスロールハンドラ
+func CmdSecretDiceRoll(cs *core.Session, md core.MessageData) (handlerResult core.HandlerResult) {
+	var returnMes string = ""
+	var command string = md.Options[0].Value
+	rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, command)
+	if err != nil {
+		returnMes = "Server internal error."
+		handlerResult.Error = err
+	}
 	/* 有効にするメッセージタイプ */
 	handlerResult.Normal.EnableType = core.EnEmbed
-
 	/* テキストメッセージ */
 	if returnMes != "" {
 		handlerResult.Normal.Content = returnMes
 	} else {
 		handlerResult.Normal.Content = rollResult.Result
 	}
-
 	/* Embedメッセージ */
 	if returnMes != "" {
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Description: returnMes,
-			Color:       0xff0000, // Red
+			Color:       core.EnColorRed,
 		}
 	} else {
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Title:       "< " + command + " >",
 			Description: rollResult.Result,
-			Color:       0x00ff00, // Green
+			Color:       core.EnColorGreen,
 		}
 	}
 
-	if rollResult.Secret == true {
-		/* 有効にするメッセージタイプ */
-		handlerResult.Secret.EnableType = core.EnEmbed
-
-		/* テキストメッセージ */
-		handlerResult.Secret.Content = "**SECRET DICE**"
-
-		/* Embedメッセージ */
-		handlerResult.Secret.Embed = &discordgo.MessageEmbed{
-			Title: "SECRET DICE",
-			Color: 0xffff00, // Yellow
-		}
+	/* 有効にするメッセージタイプ */
+	handlerResult.Secret.EnableType = core.EnEmbed
+	/* テキストメッセージ */
+	handlerResult.Secret.Content = "**SECRET DICE**"
+	/* Embedメッセージ */
+	handlerResult.Secret.Embed = &discordgo.MessageEmbed{
+		Title: "SECRET DICE",
+		Color: core.EnColorYellow,
 	}
-
 	return handlerResult
 }
 
@@ -565,10 +553,12 @@ func CmdSanCheckRoll(cs *core.Session, md core.MessageData) (handlerResult core.
 
 		if cs == nil {
 			returnMes = "PC not registered."
+			handlerResult.Error = errors.New(returnMes)
 		} else {
 			pc, exist := (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 			if exist == false {
 				returnMes = "PC not found."
+				handlerResult.Error = errors.New(returnMes)
 			} else {
 				orgSanNum = GetSkillNum(pc, "san", "now")
 				sanRollCmd := "SCCB<=" + orgSanNum
@@ -624,7 +614,7 @@ func CmdSanCheckRoll(cs *core.Session, md core.MessageData) (handlerResult core.
 	if returnMes != "" {
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Description: returnMes,
-			Color:       0xff0000, // Red
+			Color:       core.EnColorRed,
 		}
 	} else {
 		var fields []*discordgo.MessageEmbedField
@@ -648,7 +638,7 @@ func CmdSanCheckRoll(cs *core.Session, md core.MessageData) (handlerResult core.
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
 			Title:       "< SANc >",
 			Description: sanRollResult.Result,
-			Color:       0x00ff00, // Green
+			Color:       core.EnColorGreen,
 			Fields:      fields,
 		}
 	}
