@@ -12,20 +12,8 @@ import (
 /* 内部型定義                                                               */
 /****************************************************************************/
 
-/****************************************************************************/
-/* 内部定数定義                                                             */
-/****************************************************************************/
-
-/****************************************************************************/
-/* 内部変数定義                                                             */
-/****************************************************************************/
-
-/****************************************************************************/
-/* 外部公開型定義                                                           */
-/****************************************************************************/
-
 // コマンドハンドラテーブル用構造体
-type CmdHandleFuncStruct struct {
+type cmdHandleFuncStruct struct {
 	System           string
 	Command          string
 	Function         core.CmdHandleFunc
@@ -33,14 +21,14 @@ type CmdHandleFuncStruct struct {
 }
 
 // キャラクターデータ取得関数用構造体
-type CharacterDataGetFuncStruct struct {
+type characterDataGetFuncStruct struct {
 	System   string
 	DataName string
 	Function core.CharacterDataGetFunc
 }
 
 /****************************************************************************/
-/* 外部公開定数定義                                                         */
+/* 内部定数定義                                                             */
 /****************************************************************************/
 
 // 共通コマンド定数定義
@@ -50,13 +38,17 @@ const STR_CMD_CONNECT_SESSION string = "connect-session"
 const STR_CMD_STORE_SESSION string = "store-session"
 const STR_CMD_RESTORE_SESSION string = "restore-session"
 
+/****************************************************************************/
+/* 内部変数定義                                                             */
+/****************************************************************************/
+
 // スラッシュコマンド設定用定数定義
 var BOL_DAT_DM_PERMISSION_ALLOW bool = true                                              // DMPermissionにはconstを設定出来ないためvarで定義
 var BOL_DAT_DM_PERMISSION_DENY bool = false                                              // DMPermissionにはconstを設定出来ないためvarで定義
 var INT_DAT_MEMBER_PERMISSION_MANAGE_CHANNELS int64 = discordgo.PermissionManageChannels // DefaultMemberPermissionにはconstを設定出来ないためvarで定義
 
 // スラッシュコマンドハンドラテーブル
-var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
+var slashCmdHandleFuncTable = []cmdHandleFuncStruct{
 	{"General", STR_CMD_VERSION, core.CmdShowVersion, // バージョン情報表示処理
 		discordgo.ApplicationCommand{
 			Name:         STR_CMD_VERSION,
@@ -181,7 +173,7 @@ var SlashCmdHandleFuncTable = []CmdHandleFuncStruct{
 }
 
 // テキストコマンドハンドラテーブル
-var CmdHandleFuncTable = []CmdHandleFuncStruct{
+var cmdHandleFuncTable = []cmdHandleFuncStruct{
 	{"Cthulhu", "regchara", cthulhu.CmdRegistryCharacter, // キャラクターシート連携処理
 		discordgo.ApplicationCommand{},
 	},
@@ -206,16 +198,44 @@ var CmdHandleFuncTable = []CmdHandleFuncStruct{
 }
 
 // キャラクターデータ取得関数テーブル
-var CharacterDataGetFuncTable = []CharacterDataGetFuncStruct{
+var characterDataGetFuncTable = []characterDataGetFuncStruct{
 	{"Cthulhu", "CharacterName", cthulhu.GetCharacterName},
 	{"Cthulhu", "CSheetUrl", cthulhu.GetCharacterSheetUrl},
 }
 
 // core→各システムセッション復元関数コンフィグ
-var SessionRestoreFuncTable = map[string]core.SessionRestoreFunc{
+var sessionRestoreFuncTable = map[string]core.SessionRestoreFunc{
 	"Cthulhu": cthulhu.JobRestoreSession,
 }
 
 /****************************************************************************/
+/* 外部公開型定義                                                           */
+/****************************************************************************/
+
+/****************************************************************************/
+/* 外部公開定数定義                                                         */
+/****************************************************************************/
+
+/****************************************************************************/
 /* 関数定義                                                                 */
 /****************************************************************************/
+
+// スラッシュコマンドハンドラテーブル取得
+func GetSlashCmdHandleFuncTable() []cmdHandleFuncStruct {
+	return slashCmdHandleFuncTable
+}
+
+// テキストコマンドハンドラテーブル取得
+func GetCmdHandleFuncTable() []cmdHandleFuncStruct {
+	return cmdHandleFuncTable
+}
+
+// キャラクターデータ取得関数テーブル取得
+func GetCharacterDataGetFuncTable() []characterDataGetFuncStruct {
+	return characterDataGetFuncTable
+}
+
+// core→各システムセッション復元関数コンフィグ取得
+func GetSessionRestoreFuncTable() map[string]core.SessionRestoreFunc {
+	return sessionRestoreFuncTable
+}

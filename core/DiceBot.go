@@ -33,7 +33,7 @@ var cmdHandleMap = map[string]map[string]CmdHandleFunc{}
 var cdGetFuncMap = map[string]map[string]CharacterDataGetFunc{}
 
 // セッション復元関数群登録用マップ
-var SessionRestoreFuncTable = map[string]SessionRestoreFunc{}
+var sessionRestoreFuncTable = map[string]SessionRestoreFunc{}
 
 // スラッシュコマンドハンドラ登録処理
 func AddSlashCmdHandler(system string, cmd string, handler CmdHandleFunc) {
@@ -159,6 +159,8 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 				diceResultLog.Result = handlerResult.Normal.Content
 				diceResultLogs = append(diceResultLogs, diceResultLog)
 			}
+		} else {
+			log.Printf("[Debug]: No event. System: '%v', MessageData: '%v'", system, md)
 		}
 	}
 	return handlerResult
@@ -174,7 +176,12 @@ func AddCharacterDataGetFunc(system string, dataName string, getFunc CharacterDa
 
 // セッション復元関数群登録処理
 func SetRestoreFunc(funcmap map[string]SessionRestoreFunc) {
-	SessionRestoreFuncTable = funcmap
+	sessionRestoreFuncTable = funcmap
+}
+
+// セッション復元関数群公開処理
+func GetRestoreFunc() map[string]SessionRestoreFunc {
+	return sessionRestoreFuncTable
 }
 
 // キャラクターデータ取得関数登録処理
