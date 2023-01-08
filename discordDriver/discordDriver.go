@@ -130,8 +130,52 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 	}
 }
 
-// インタラクション受診時処理
+// インタラクション受信時処理
 func OnInteractionCreate(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	if interaction.Message == nil {
+		jobInteractionMessage(session, interaction)
+	} else {
+		jobInteractionButton(session, interaction)
+	}
+}
+
+// ボタン処理
+func jobInteractionButton(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	switch interaction.MessageComponentData().CustomID {
+	case "is-secret-open":
+		{
+			// キャラクター名取得
+			characterName := core.GetCharacterData(interaction.ChannelID, interaction.Member.User.ID, "CharacterName")
+			cSheetUrl := core.GetCharacterData(interaction.ChannelID, interaction.Member.User.ID, "CSheetUrl")
+			if characterName != "" {
+				characterName = "【" + characterName + "】 "
+			}
+			embedAuthor := &discordgo.MessageEmbedAuthor{
+				Name: characterName,
+				URL:  cSheetUrl,
+			}
+			// 応答
+			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Embeds: []*discordgo.MessageEmbed{
+						{
+							Author:      embedAuthor,
+							Title:       "シークレットロール結果公開",
+							Description: interaction.Message.Embeds[0].Title + "\n" + interaction.Message.Embeds[0].Description,
+							Color:       core.EnColorGreen,
+						},
+					},
+				},
+			})
+		}
+	default:
+		/* Non process */
+	}
+}
+
+// スラッシュコマンド処理
+func jobInteractionMessage(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	// インタラクション送信者情報取得
 	var interactionUser *discordgo.User
 	if interaction.User != nil {
@@ -175,10 +219,23 @@ func OnInteractionCreate(session *discordgo.Session, interaction *discordgo.Inte
 		characterName = "【" + characterName + "】 "
 	}
 
-	// シークレットメッセージを含む場合、Ephemeralフラグを立てる。
+	// シークレットメッセージを含む場合、Ephemeralフラグを立て、シークレットメッセージ公開用ボタンを設定する。
 	var flags discordgo.MessageFlags = 0
+	var components = []discordgo.MessageComponent{}
 	if handlerResult.Secret.EnableType == core.EnContent || handlerResult.Secret.EnableType == core.EnEmbed {
 		flags = discordgo.MessageFlagsEphemeral
+		components = []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						CustomID: "is-secret-open",
+						Label:    "結果を公開する",
+						Style:    discordgo.PrimaryButton,
+					},
+				},
+			},
+		}
+
 	}
 
 	/* 通常メッセージの送信 */
@@ -188,8 +245,9 @@ func OnInteractionCreate(session *discordgo.Session, interaction *discordgo.Inte
 			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
-					Flags:   flags,
-					Content: handlerResult.Normal.Content,
+					Flags:      flags,
+					Content:    handlerResult.Normal.Content,
+					Components: components,
 				},
 			})
 		}
@@ -202,8 +260,9 @@ func OnInteractionCreate(session *discordgo.Session, interaction *discordgo.Inte
 		session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Flags:  flags,
-				Embeds: []*discordgo.MessageEmbed{handlerResult.Normal.Embed},
+				Flags:      flags,
+				Embeds:     []*discordgo.MessageEmbed{handlerResult.Normal.Embed},
+				Components: components,
 			},
 		})
 	} else {

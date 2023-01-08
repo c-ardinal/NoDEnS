@@ -235,7 +235,7 @@ func CmdRestoreSession(cs *Session, md MessageData) (handlerResult HandlerResult
 	} else {
 		// 各システム固有情報の復元
 		ses := GetSessionByID(md.ChannelID)
-		systemRestoreFunc, isExist := SessionRestoreFuncTable[(*ses).Scenario.System]
+		systemRestoreFunc, isExist := GetRestoreFunc()[(*ses).Scenario.System]
 		if isExist == true {
 			systemRestoreFunc.ExecuteSessionRestore(ses)
 		}

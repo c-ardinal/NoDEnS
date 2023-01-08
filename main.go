@@ -32,17 +32,17 @@ func main() {
 	core.LoadConfig(configFile)
 
 	// テキストコマンドハンドラ登録
-	for _, handle := range config.CmdHandleFuncTable {
+	for _, handle := range config.GetCmdHandleFuncTable() {
 		core.AddCmdHandler(handle.System, handle.Command, handle.Function)
 	}
 
 	// キャラクターデータ取得関数登録
-	for _, cdFunc := range config.CharacterDataGetFuncTable {
+	for _, cdFunc := range config.GetCharacterDataGetFuncTable() {
 		core.AddCharacterDataGetFunc(cdFunc.System, cdFunc.DataName, cdFunc.Function)
 	}
 
 	// セッション復元関数登録
-	core.SetRestoreFunc(config.SessionRestoreFuncTable)
+	core.SetRestoreFunc(config.GetSessionRestoreFuncTable())
 
 	// ■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□■□
 	// Discord依存処理
@@ -55,7 +55,7 @@ func main() {
 	discord.AddHandler(discordDriver.OnInteractionCreate)
 
 	// スラッシュコマンドハンドラ登録
-	for _, handle := range config.SlashCmdHandleFuncTable {
+	for _, handle := range config.GetSlashCmdHandleFuncTable() {
 		core.AddSlashCmdHandler(handle.System, handle.Command, handle.Function)
 		discordDriver.AddSlashCmdData(handle.System, handle.SlashCommandData)
 	}
