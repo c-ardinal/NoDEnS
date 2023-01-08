@@ -158,6 +158,7 @@ func jobInteractionButton(session *discordgo.Session, interaction *discordgo.Int
 			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
+					Content: "<@" + interaction.Member.User.ID + ">",
 					Embeds: []*discordgo.MessageEmbed{
 						{
 							Author:      embedAuthor,
