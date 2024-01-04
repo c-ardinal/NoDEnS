@@ -41,7 +41,7 @@ func NewSession(chID string, system string, kpName string, kpID string) *Session
 // セッション削除処理
 func RemoveSession(chID string) bool {
 	result := false
-	if CheckExistSession(chID) == true {
+	if CheckExistParentSession(chID) == true {
 		delete(trpgSession, chID)
 		result = true
 	}
@@ -65,7 +65,7 @@ func RestoreSession(chID string) error {
 		return err
 	}
 
-	if CheckExistSession(chID) == false {
+	if CheckExistParentSession(chID) == false {
 		var newSession Session
 		trpgSession[chID] = &newSession
 	}
@@ -77,10 +77,22 @@ func RestoreSession(chID string) error {
 	return nil
 }
 
-// セッション存在有無チェック処理
-func CheckExistSession(chID string) bool {
+// 親セッション存在有無チェック処理
+func CheckExistParentSession(chID string) bool {
 	_, result := trpgSession[chID]
 	return result
+}
+
+// 子セッション存在有無チェック処理
+func CheckExistChildSession(chID string) bool {
+	for _, parentSession := range trpgSession {
+		for _, childSession := range parentSession.Chat.Child {
+			if chID == childSession.ID {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // セッション取得処理

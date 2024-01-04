@@ -107,7 +107,7 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 		handlerResult = fs.ExecuteCmd(cs, md)
 	} else {
 		/* セッションが生成されている場合のみダイスロールを実行 */
-		if CheckExistSession(targetID) {
+		if CheckExistParentSession(targetID) {
 			var rollResult BCDiceRollResult
 			log.Printf("[Event]: Execute dice roll '%v'", md.MessageString)
 			rollResult, handlerResult.Error = ExecuteDiceRollAndCalc(GetConfig().EndPoint, (*cs).Scenario.System, md.MessageString)

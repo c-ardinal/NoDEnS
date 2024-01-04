@@ -38,7 +38,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 		handlerResult.Error = errors.New(returnMes)
 	} else {
 		urlStr = md.Options[0].Value
-		if core.CheckExistSession(md.ChannelID) == true {
+		if core.CheckExistParentSession(md.ChannelID) == true {
 			/* 親セッションでキャラクター登録コマンドが来た場合，PCとして登録する */
 			if core.CheckExistCharacter(md.ChannelID, md.AuthorID) == true {
 				returnMes = "Character already exists."

@@ -72,59 +72,66 @@ func CmdCreateSession(cs *Session, md MessageData) (handlerResult HandlerResult)
 			}
 		}
 	}
-	if forced != "" {
-		isContains := CheckContainsSystem(GetConfig().EndPoint, system)
-		if system != "" {
-			if isContains == true {
-				if CheckExistSession(md.ChannelID) == true {
-					/* セッションの強制再生成実行 */
-					RemoveSession(md.ChannelID)
-					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
-					returnMes = "Session recreate successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-					returnMesColor = EnColorGreen
-				} else {
-					/* セッションを生成 */
-					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
-					returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-					returnMesColor = EnColorGreen
-				}
-			} else {
-				/* 指定されたシステムが見つからない場合はセッションの強制再生成をしない */
-				returnMes = "System not found."
-				handlerResult.Error = errors.New(returnMes)
-				returnMesColor = EnColorRed
-			}
-		} else {
-			/* システムの指定が無い場合はセッションの強制再生成をしない */
-			returnMes = "Session create failed."
-			handlerResult.Error = errors.New(returnMes)
-			returnMesColor = EnColorRed
-		}
+	if CheckExistChildSession(md.ChannelID) {
+		/* 子セッションが既に有る場合はセッションを生成しない */
+		returnMes = "Child session already exists."
+		handlerResult.Error = errors.New(returnMes)
+		returnMesColor = EnColorRed
 	} else {
-		isContains := CheckContainsSystem(GetConfig().EndPoint, system)
-		if system != "" {
-			if isContains == true {
-				if CheckExistSession(md.ChannelID) == true {
-					/* セッションが生成済みなら生成しない */
-					returnMes = "Session already exists."
-					returnMesColor = EnColorYellow
+		if forced != "" {
+			isContains := CheckContainsSystem(GetConfig().EndPoint, system)
+			if system != "" {
+				if isContains {
+					if CheckExistParentSession(md.ChannelID) {
+						/* セッションの強制再生成実行 */
+						RemoveSession(md.ChannelID)
+						cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
+						returnMes = "Session recreate successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
+						returnMesColor = EnColorGreen
+					} else {
+						/* セッションを生成 */
+						cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
+						returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
+						returnMesColor = EnColorGreen
+					}
 				} else {
-					/* セッションを生成 */
-					cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
-					returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
-					returnMesColor = EnColorGreen
+					/* 指定されたシステムが見つからない場合はセッションの強制再生成をしない */
+					returnMes = "System not found."
+					handlerResult.Error = errors.New(returnMes)
+					returnMesColor = EnColorRed
 				}
 			} else {
-				/* 指定されたシステムが見つからない場合はセッションの強制再生成をしない */
-				returnMes = "System not found."
+				/* システムの指定が無い場合はセッションの強制再生成をしない */
+				returnMes = "Session create failed."
 				handlerResult.Error = errors.New(returnMes)
 				returnMesColor = EnColorRed
 			}
 		} else {
-			/* システムの指定が無い場合はセッションを生成しない */
-			returnMes = "Session create failed."
-			handlerResult.Error = errors.New(returnMes)
-			returnMesColor = EnColorRed
+			isContains := CheckContainsSystem(GetConfig().EndPoint, system)
+			if system != "" {
+				if isContains {
+					if CheckExistParentSession(md.ChannelID) {
+						/* セッションが生成済みなら生成しない */
+						returnMes = "Session already exists."
+						returnMesColor = EnColorYellow
+					} else {
+						/* セッションを生成 */
+						cs = NewSession(md.ChannelID, system, md.AuthorName, md.AuthorID)
+						returnMes = "Session create successfully. \n[System]: " + cs.Scenario.System + " \n[ChannelID]: " + md.ChannelID
+						returnMesColor = EnColorGreen
+					}
+				} else {
+					/* 指定されたシステムが見つからない場合はセッションの強制再生成をしない */
+					returnMes = "System not found."
+					handlerResult.Error = errors.New(returnMes)
+					returnMesColor = EnColorRed
+				}
+			} else {
+				/* システムの指定が無い場合はセッションを生成しない */
+				returnMes = "Session create failed."
+				handlerResult.Error = errors.New(returnMes)
+				returnMesColor = EnColorRed
+			}
 		}
 	}
 
@@ -150,7 +157,7 @@ func CmdConnectSession(cs *Session, md MessageData) (handlerResult HandlerResult
 
 	/* 親セッションの存在有無確認 */
 	parentID := md.Options[0].Value
-	if CheckExistSession(parentID) == true {
+	if CheckExistParentSession(parentID) == true {
 		if parentID != md.ChannelID {
 			/* 自セッションと親セッションが異なるセッションなら接続 */
 			pcs := GetSessionByID(parentID)
@@ -190,7 +197,7 @@ func CmdStoreSession(cs *Session, md MessageData) (handlerResult HandlerResult) 
 	var returnMes string
 	var returnMesColor int
 
-	if CheckExistSession(md.ChannelID) == true {
+	if CheckExistParentSession(md.ChannelID) == true {
 		_, err := StoreSession(md.ChannelID)
 		if err != nil {
 			returnMes = "Session store failed."
