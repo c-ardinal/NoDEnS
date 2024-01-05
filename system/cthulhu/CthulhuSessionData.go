@@ -28,35 +28,27 @@ import (
 func GetSkillNum(pc *CharacterOfCthulhu, skill string, stype string) string {
 	var returnNum = -1
 	ua, exist := pc.Ability[strings.ToUpper(skill)]
-	if exist == true {
+	if exist {
 		switch stype {
 		case "init":
 			returnNum = (*ua).Init
-			break
 		case "sum":
 			returnNum = (*ua).Sum
-			break
 		case "now":
 			returnNum = (*ua).Now
-			break
 		default:
-			break
 		}
 	} else {
 		for _, s := range pc.Skill {
-			if strings.Contains((*s).Name+" "+(*s).Sub, skill) == true {
+			if strings.Contains((*s).Name+" "+(*s).Sub, skill) {
 				switch stype {
 				case "init":
 					returnNum = (*s).Init
-					break
 				case "sum":
 					returnNum = (*s).Sum
-					break
 				case "now":
 					returnNum = (*s).Now
-					break
 				default:
-					break
 				}
 				break
 			}
@@ -71,12 +63,12 @@ func AddSkillNum(pc *CharacterOfCthulhu, skill string, add string) string {
 
 	addNum, _ := strconv.Atoi(add)
 	ua, exist := pc.Ability[strings.ToUpper(skill)]
-	if exist == true {
+	if exist {
 		(*ua).Now += addNum
 		returnNum = (*ua).Now
 	} else {
 		for _, sk := range pc.Skill {
-			if strings.Contains((*sk).Name+" "+(*sk).Sub, skill) == true {
+			if strings.Contains((*sk).Name+" "+(*sk).Sub, skill) {
 				(*sk).Now += addNum
 				returnNum = (*sk).Now
 				break

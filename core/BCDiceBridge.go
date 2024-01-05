@@ -65,7 +65,7 @@ func CheckContainsSystem(endpoint string, system string) (result bool) {
 	systemsList, err := ExecuteGetSystems(endpoint)
 	if err == nil {
 		for _, sys := range systemsList.Systems {
-			if strings.ToLower(sys.Id) == strings.ToLower(system) {
+			if strings.EqualFold(strings.ToLower(sys.Id), strings.ToLower(system)) {
 				return true
 			}
 		}
@@ -89,7 +89,7 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 	}
 
 	/* 計算式が含まれているか確認 */
-	calcCheckRegp := regexp.MustCompile("[\\( ]*[\\+\\- ]*[a-zA-Z0-9 ]+[\\) ]*[\\+\\-\\/\\* ]{1}[\\( ]*[\\+\\- ]*[a-zA-Z0-9 ]+[\\) ]*")
+	calcCheckRegp := regexp.MustCompile(`[\( ]*[\+\- ]*[a-zA-Z0-9 ]+[\) ]*[\+\-\/\* ]{1}[\( ]*[\+\- ]*[a-zA-Z0-9 ]+[\) ]*`)
 	isCalcMatch := calcCheckRegp.MatchString(diceCalcStr)
 	if isCalcMatch {
 		/* 計算式が含まれていた場合 */
@@ -104,7 +104,7 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 			strIntegDiceCmd := splitStrArray[0] + calAnswer
 			rrtmp, err = ExecuteDiceRoll(endpoint, system, strIntegDiceCmd)
 			rr.Ok = rrtmp.Ok
-			if "" != workingFormula {
+			if workingFormula != "" {
 				rr.Result = "calc(" + dice + ") \n＞ calc(" + workingFormula + ") \n＞ " + strings.Replace(rrtmp.Result, "＞", "\n＞", -1)
 			} else {
 				rr.Result = "calc(" + dice + ") \n＞ " + strings.Replace(rrtmp.Result, "＞", "\n＞", -1)
@@ -117,7 +117,7 @@ func ExecuteDiceRollAndCalc(endpoint string, system string, dice string) (rr BCD
 			rr.Dices = rrtmp.Dices
 		} else {
 			rr.Ok = true
-			if "" != workingFormula {
+			if workingFormula != "" {
 				rr.Result = "calc(" + dice + ") \n＞ calc(" + workingFormula + ") \n＞ " + strings.Replace(calAnswer, "＞", "\n＞", -1)
 			} else {
 				rr.Result = "calc(" + dice + ") \n＞ " + strings.Replace(calAnswer, "＞", "\n＞", -1)

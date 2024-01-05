@@ -2,7 +2,7 @@ package core
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
 /****************************************************************************/
@@ -34,14 +34,15 @@ var myConfig SystemConfig
 
 // 設定情報読み込み処理
 func LoadConfig(path string) error {
-	raw, err := ioutil.ReadFile(path)
-	if err != nil {
+	if raw, err := os.ReadFile(path); err == nil {
+		if err := json.Unmarshal(raw, &myConfig); err == nil {
+			return nil
+		} else {
+			return err
+		}
+	} else {
 		return err
 	}
-	if err := json.Unmarshal(raw, &myConfig); err != nil {
-		return err
-	}
-	return nil
 }
 
 // 設定情報取得処理

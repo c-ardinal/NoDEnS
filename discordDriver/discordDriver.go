@@ -106,8 +106,6 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 			}
 			handlerResult.Normal.Embed.Author = embedAuthor
 			session.ChannelMessageSendEmbedReply(md.ChannelID, handlerResult.Normal.Embed, &ref)
-		} else {
-			/* Non process */
 		}
 
 		/* シークレットメッセージの送信 */
@@ -123,8 +121,6 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 					Embed:   handlerResult.Secret.Embed,
 				}
 				session.ChannelMessageSendComplex(core.GetParentIDFromChildID(md.ChannelID), messageSend)
-			} else {
-				/* Non process */
 			}
 		}
 	}
@@ -266,8 +262,6 @@ func jobInteractionMessage(session *discordgo.Session, interaction *discordgo.In
 				Components: components,
 			},
 		})
-	} else {
-		/* Non process */
 	}
 
 	/* シークレットメッセージの送信 */
@@ -283,8 +277,6 @@ func jobInteractionMessage(session *discordgo.Session, interaction *discordgo.In
 				Embed:   handlerResult.Secret.Embed,
 			}
 			session.ChannelMessageSendComplex(md.ChannelID, messageSend)
-		} else {
-			/* Non process */
 		}
 	}
 }

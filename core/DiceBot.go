@@ -97,11 +97,11 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 		system = cs.Scenario.System
 	}
 
-	if fg, exist := handleMap["General"][md.Command]; exist == true {
+	if fg, exist := handleMap["General"][md.Command]; exist {
 		/* 共通コマンドコール処理 */
 		log.Printf("[Event]: Command call '%v'", md.Command)
 		handlerResult = fg.ExecuteCmd(cs, md)
-	} else if fs, exist := handleMap[system][md.Command]; exist == true {
+	} else if fs, exist := handleMap[system][md.Command]; exist {
 		/* 各システム用コマンドコール処理 */
 		log.Printf("[Event]: Command call '%v'", md.Command)
 		handlerResult = fs.ExecuteCmd(cs, md)
@@ -135,7 +135,7 @@ func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]Cm
 				}
 			}
 
-			if rollResult.Secret == true {
+			if rollResult.Secret {
 				/* シークレットダイスが振られた旨のメッセージ */
 				/* 有効にするメッセージタイプ */
 				handlerResult.Secret.EnableType = EnEmbed
@@ -187,8 +187,8 @@ func GetRestoreFunc() map[string]SessionRestoreFunc {
 // キャラクターデータ取得関数登録処理
 func GetCharacterDataGetFunc(system string, dataName string) CharacterDataGetFunc {
 	var result CharacterDataGetFunc = nil
-	if _, exist := cdGetFuncMap[system]; exist == true {
-		if _, exist := cdGetFuncMap[system][dataName]; exist == true {
+	if _, exist := cdGetFuncMap[system]; exist {
+		if _, exist := cdGetFuncMap[system][dataName]; exist {
 			result = cdGetFuncMap[system][dataName]
 		}
 	}
