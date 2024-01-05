@@ -299,10 +299,10 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 					diffRegex := regexp.MustCompile("^[+-]?[0-9]+$")
 					diffCmd = ctrlNum
 					if !diffRegex.MatchString(diffCmd) {
-						minusFlag := false
+						sign := ""
 						if strings.Contains(diffCmd, "-") {
 							diffCmd = strings.ReplaceAll(diffCmd, "-", "")
-							minusFlag = true
+							sign = "-"
 						}
 						rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diffCmd)
 						rollResultMessage = rollResult.Result
@@ -310,16 +310,7 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 							returnMes = "Invalid diff num."
 							handlerResult.Error = err
 						} else {
-							var sum int
-							for _, r := range rollResult.Dices {
-								sum += r.Value
-							}
-
-							if minusFlag {
-								diffCmd = "-" + strconv.Itoa(sum)
-							} else {
-								diffCmd = strconv.Itoa(sum)
-							}
+							diffCmd = sign + core.CalcDicesSum(rollResult.Dices)
 						}
 					}
 					newNum = AddSkillNum(chara, targetSkill, diffCmd)
@@ -411,11 +402,8 @@ func jobLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.Hand
 								returnMes = "server internal error"
 								handlerResult.Error = err
 							}
-							var sum = 0
-							for _, unitResult := range rollResult.Dices {
-								sum += unitResult.Value
-							}
-							diceCmd = strings.Replace(diceCmd, ex, strconv.Itoa(sum), -1)
+							sum := core.CalcDicesSum(rollResult.Dices)
+							diceCmd = strings.Replace(diceCmd, ex, sum, -1)
 						}
 					} else {
 						exNum := GetSkillNum(chara, ex, "now")

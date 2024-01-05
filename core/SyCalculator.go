@@ -243,11 +243,7 @@ func convDiceTokens2NumTokens(tknArray []tokenT, system string) (result []tokenT
 	for i, t := range tknArray {
 		if t.tokentype == COMMAND {
 			rollResult, err = ExecuteDiceRoll(GetConfig().EndPoint, system, t.token)
-			var sum int = 0
-			for _, d := range rollResult.Dices {
-				sum += int(d.Value)
-			}
-			result[i].token = strconv.Itoa(sum)
+			result[i].token = CalcDicesSum(rollResult.Dices)
 			result[i].tokentype = NUMBER
 		}
 	}
