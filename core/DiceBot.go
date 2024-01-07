@@ -23,9 +23,6 @@ import (
 // ダイスロール実行ログ格納変数
 var diceResultLogs = []DiceResultLog{}
 
-// スラッシュコマンドハンドル群登録用マップ
-var slashCmdHandleMap = map[string]map[string]CmdHandleFunc{}
-
 // テキストコマンドハンドル群登録用マップ
 var cmdHandleMap = map[string]map[string]CmdHandleFunc{}
 
@@ -35,24 +32,9 @@ var cdGetFuncMap = map[string]map[string]CharacterDataGetFunc{}
 // セッション復元関数群登録用マップ
 var sessionRestoreFuncTable = map[string]SessionRestoreFunc{}
 
-// スラッシュコマンドハンドラ登録処理
-func AddSlashCmdHandler(system string, cmd string, handler CmdHandleFunc) {
-	if slashCmdHandleMap[system] == nil {
-		slashCmdHandleMap[system] = make(map[string]CmdHandleFunc)
-	}
-	slashCmdHandleMap[system][cmd] = handler
-}
-
 /****************************************************************************/
 /* 関数定義                                                                 */
 /****************************************************************************/
-
-// ExecuteCmdHandler スラッシュコマンドハンドラ実行処理
-func ExecuteSlashCmdHandler(md MessageData) (handlerResult HandlerResult) {
-	log.Printf("[Event]: Execute slash command handler '%v'", md)
-	handlerResult = executeCmdHandlerGeneral(md, slashCmdHandleMap)
-	return handlerResult
-}
 
 // AddCmdHandler テキストコマンドハンドラ登録処理
 func AddCmdHandler(system string, cmd string, handler CmdHandleFunc) {
@@ -75,13 +57,13 @@ func ExecuteCmdHandler(md MessageData) (handlerResult HandlerResult) {
 				Value: str,
 			})
 		}
-		handlerResult = executeCmdHandlerGeneral(md, cmdHandleMap)
+		handlerResult = ExecuteCmdHandlerGeneral(md, cmdHandleMap)
 	}
 	return handlerResult
 }
 
-// executeCmdHandlerGeneral コマンドハンドラ共通処理
-func executeCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]CmdHandleFunc) (handlerResult HandlerResult) {
+// ExecuteCmdHandlerGeneral コマンドハンドラ共通処理
+func ExecuteCmdHandlerGeneral(md MessageData, handleMap map[string]map[string]CmdHandleFunc) (handlerResult HandlerResult) {
 	/* チャネルIDからセッション情報を取得 */
 	var targetID string = ""
 	if GetParentIDFromChildID(md.ChannelID) != "" {
