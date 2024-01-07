@@ -34,19 +34,19 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 	var returnMes string
 
 	if len(md.Options) == 0 {
-		returnMes = "Invalid arguments."
+		returnMes = "invalid arguments"
 		handlerResult.Error = errors.New(returnMes)
 	} else {
 		urlStr = md.Options[0].Value
-		if core.CheckExistSession(md.ChannelID) == true {
+		if core.CheckExistParentSession(md.ChannelID) {
 			/* 親セッションでキャラクター登録コマンドが来た場合，PCとして登録する */
-			if core.CheckExistCharacter(md.ChannelID, md.AuthorID) == true {
-				returnMes = "Character already exists."
+			if core.CheckExistCharacter(md.ChannelID, md.AuthorID) {
+				returnMes = "character already exists"
 				handlerResult.Error = errors.New(returnMes)
 			} else {
 				cas, err := GetCharSheetFromURL(urlStr)
 				if err != nil {
-					returnMes = "Registry failed."
+					returnMes = "registry failed"
 					handlerResult.Error = err
 				} else {
 					cd = GetCharDataFromCharSheet(cas, md.AuthorName, md.AuthorID)
@@ -56,13 +56,13 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 			}
 		} else if core.GetParentIDFromChildID(md.ChannelID) != "" {
 			/* 子セッションでキャラクター登録コマンドが来た場合，NPCとして登録する */
-			if core.CheckExistNPCharacter(core.GetParentIDFromChildID(md.ChannelID), md.AuthorID) == true {
-				returnMes = "Character already exists."
+			if core.CheckExistNPCharacter(core.GetParentIDFromChildID(md.ChannelID), md.AuthorID) {
+				returnMes = "character already exists"
 				handlerResult.Error = errors.New(returnMes)
 			} else {
 				cas, err := GetCharSheetFromURL(urlStr)
 				if err != nil {
-					returnMes = "Registry failed."
+					returnMes = "registry failed"
 					handlerResult.Error = err
 				} else {
 					cd = GetCharDataFromCharSheet(cas, md.AuthorName, md.AuthorID)
@@ -71,7 +71,7 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 				}
 			}
 		} else {
-			returnMes = "Session not found."
+			returnMes = "session not found"
 			handlerResult.Error = errors.New(returnMes)
 		}
 	}
@@ -96,7 +96,6 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 				handlerResult.Normal.Content += "**[ " + a.Name + " ]** " + strconv.Itoa(a.Now) + " (Init: " + strconv.Itoa(a.Init) + ")\n"
 			}
 		}
-		handlerResult.Normal.Content += "**[メ モ]** \n" + cd.Memo + "\n"
 		handlerResult.Normal.Content += "====================\n"
 	}
 
@@ -158,11 +157,6 @@ func CmdRegistryCharacter(cs *core.Session, md core.MessageData) (handlerResult 
 				Name:   "\u200B",
 				Value:  "---------------------------------------------------------",
 				Inline: false,
-			},
-			&discordgo.MessageEmbedField{
-				Name:   "[メ モ]",
-				Value:  cd.Memo,
-				Inline: false,
 			})
 
 		handlerResult.Normal.Embed = &discordgo.MessageEmbed{
@@ -185,12 +179,12 @@ func CmdCharaNumCheck(cs *core.Session, md core.MessageData) (handlerResult core
 	var returnMes string
 
 	if len(md.Options[0].Value) == 0 {
-		returnMes = "Invalid arguments."
+		returnMes = "invalid arguments"
 		handlerResult.Error = errors.New(returnMes)
 	} else {
 		skillName = md.Options[0].Value
 		if cs == nil {
-			returnMes = "Character not registered."
+			returnMes = "character not registered"
 			handlerResult.Error = errors.New(returnMes)
 		} else {
 			var chara *CharacterOfCthulhu
@@ -200,12 +194,12 @@ func CmdCharaNumCheck(cs *core.Session, md core.MessageData) (handlerResult core
 			} else {
 				chara, exist = (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 			}
-			if exist == false {
+			if !exist {
 				returnMes = "Character not found."
 			} else {
 				initNum = GetSkillNum(chara, skillName, "init")
 				if initNum == "-1" {
-					returnMes = "Skill not found."
+					returnMes = "skill not found"
 				} else {
 					startNum = GetSkillNum(chara, skillName, "sum")
 					nowNum = GetSkillNum(chara, skillName, "now")
@@ -293,22 +287,22 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 			} else {
 				chara, exist = (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
 			}
-			if exist == false {
-				returnMes = "Character not found."
+			if !exist {
+				returnMes = "character not found"
 				handlerResult.Error = errors.New(returnMes)
 			} else {
 				oldNum = GetSkillNum(chara, targetSkill, "now")
 				if oldNum == "-1" {
-					returnMes = "Skill not found."
+					returnMes = "skill not found"
 					handlerResult.Error = errors.New(returnMes)
 				} else {
 					diffRegex := regexp.MustCompile("^[+-]?[0-9]+$")
 					diffCmd = ctrlNum
-					if diffRegex.MatchString(diffCmd) == false {
-						minusFlag := false
+					if !diffRegex.MatchString(diffCmd) {
+						sign := ""
 						if strings.Contains(diffCmd, "-") {
 							diffCmd = strings.ReplaceAll(diffCmd, "-", "")
-							minusFlag = true
+							sign = "-"
 						}
 						rollResult, err := core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diffCmd)
 						rollResultMessage = rollResult.Result
@@ -316,16 +310,7 @@ func CmdCharaNumControl(cs *core.Session, md core.MessageData) (handlerResult co
 							returnMes = "Invalid diff num."
 							handlerResult.Error = err
 						} else {
-							var sum int
-							for _, r := range rollResult.Dices {
-								sum += r.Value
-							}
-
-							if minusFlag {
-								diffCmd = "-" + strconv.Itoa(sum)
-							} else {
-								diffCmd = strconv.Itoa(sum)
-							}
+							diffCmd = sign + core.CalcDicesSum(rollResult.Dices)
 						}
 					}
 					newNum = AddSkillNum(chara, targetSkill, diffCmd)
@@ -388,12 +373,12 @@ func jobLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.Hand
 	var returnMes string
 
 	if len(md.Options) == 0 {
-		returnMes = "Invalid arguments."
+		returnMes = "invalid arguments"
 		handlerResult.Error = errors.New(returnMes)
 	} else {
 		command = md.Options[0].Value
 		if cs == nil {
-			returnMes = "Character not registered."
+			returnMes = "character not registered"
 			handlerResult.Error = errors.New(returnMes)
 		} else {
 			var characterData interface{}
@@ -402,30 +387,38 @@ func jobLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.Hand
 			} else {
 				characterData = (*cs).Npc[md.AuthorID]
 			}
-			if chara, exist := characterData.(*CharacterOfCthulhu); exist == false {
-				returnMes = "Character not found."
+			if chara, exist := characterData.(*CharacterOfCthulhu); !exist {
+				returnMes = "character not found"
 				handlerResult.Error = errors.New(returnMes)
 			} else {
 				diceCmd := "CCB<=" + command
-				exRegex := regexp.MustCompile("[^\\+\\-\\*\\/ 　]+")
-				ignoreRegex := regexp.MustCompile("^[0-9]+$")
+				exRegex := regexp.MustCompile(`[^\+\-\*\/ 　]+`)
+				diceRegex := regexp.MustCompile("^([0-9]+d)?[0-9]+$")
 				for _, ex := range exRegex.FindAllString(command, -1) {
-					if ignoreRegex.MatchString(ex) == false {
+					if diceRegex.MatchString(ex) {
+						if strings.Contains(ex, "d") {
+							rollResult, err = core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, ex)
+							if err != nil {
+								returnMes = "server internal error"
+								handlerResult.Error = err
+							}
+							sum := core.CalcDicesSum(rollResult.Dices)
+							diceCmd = strings.Replace(diceCmd, ex, sum, -1)
+						}
+					} else {
 						exNum := GetSkillNum(chara, ex, "now")
 						if exNum == "-1" {
-							returnMes = "Skill not found."
+							returnMes = "skill not found"
 							handlerResult.Error = errors.New(returnMes)
 						} else {
 							diceCmd = strings.Replace(diceCmd, ex, exNum, -1)
-							rollResult, err = core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
-							if err != nil {
-								returnMes = "Server internal error."
-								handlerResult.Error = err
-							} else {
-								/* Non process */
-							}
 						}
 					}
+				}
+				rollResult, err = core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, diceCmd)
+				if err != nil {
+					returnMes = "server internal error"
+					handlerResult.Error = err
 				}
 			}
 		}
@@ -535,7 +528,7 @@ func CmdSanCheckRoll(cs *core.Session, md core.MessageData) (handlerResult core.
 	var returnMes string
 
 	if len(md.Options) < 2 {
-		returnMes = "Invalid arguments."
+		returnMes = "invalid arguments"
 	} else {
 
 		for _, opt := range md.Options {
@@ -547,19 +540,19 @@ func CmdSanCheckRoll(cs *core.Session, md core.MessageData) (handlerResult core.
 		}
 
 		if cs == nil {
-			returnMes = "PC not registered."
+			returnMes = "player character not registered"
 			handlerResult.Error = errors.New(returnMes)
 		} else {
 			pc, exist := (*cs).Pc[md.AuthorID].(*CharacterOfCthulhu)
-			if exist == false {
-				returnMes = "PC not found."
+			if !exist {
+				returnMes = "player character not found"
 				handlerResult.Error = errors.New(returnMes)
 			} else {
 				orgSanNum = GetSkillNum(pc, "san", "now")
 				sanRollCmd := "SCCB<=" + orgSanNum
 				sanRollResult, err = core.ExecuteDiceRollAndCalc(core.GetConfig().EndPoint, (*cs).Scenario.System, sanRollCmd)
 				if err != nil {
-					returnMes = "Server error."
+					returnMes = "server error"
 					handlerResult.Error = err
 				} else {
 					if strings.Contains(sanRollResult.Result, "成功") || strings.Contains(sanRollResult.Result, "スペシャル") {

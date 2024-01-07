@@ -2,7 +2,6 @@ package core
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 )
 
@@ -41,7 +40,7 @@ func NewSession(chID string, system string, kpName string, kpID string) *Session
 // セッション削除処理
 func RemoveSession(chID string) bool {
 	result := false
-	if CheckExistSession(chID) == true {
+	if CheckExistParentSession(chID) {
 		delete(trpgSession, chID)
 		result = true
 	}
@@ -53,19 +52,23 @@ func StoreSession(chID string) (*os.File, error) {
 	outputJSON, _ := json.MarshalIndent(*(trpgSession[chID]), "", "\t")
 	os.Mkdir("./session_data/", 0755)
 	file, err := os.Create("./session_data/" + chID + ".json")
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}()
 	file.Write(outputJSON)
 	return file, err
 }
 
 // セッション復旧処理
 func RestoreSession(chID string) error {
-	rawData, err := ioutil.ReadFile("./session_data/" + chID + ".json")
+	rawData, err := os.ReadFile("./session_data/" + chID + ".json")
 	if err != nil {
 		return err
 	}
 
-	if CheckExistSession(chID) == false {
+	if !CheckExistParentSession(chID) {
 		var newSession Session
 		trpgSession[chID] = &newSession
 	}
@@ -77,10 +80,22 @@ func RestoreSession(chID string) error {
 	return nil
 }
 
-// セッション存在有無チェック処理
-func CheckExistSession(chID string) bool {
+// 親セッション存在有無チェック処理
+func CheckExistParentSession(chID string) bool {
 	_, result := trpgSession[chID]
 	return result
+}
+
+// 子セッション存在有無チェック処理
+func CheckExistChildSession(chID string) bool {
+	for _, parentSession := range trpgSession {
+		for _, childSession := range parentSession.Chat.Child {
+			if chID == childSession.ID {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // セッション取得処理
@@ -90,14 +105,14 @@ func GetSessionByID(chID string) *Session {
 
 // プレイヤーキャラクター登録有無チェック処理
 func CheckExistCharacter(chID string, plID string) bool {
-	ts, _ := trpgSession[chID]
+	ts := trpgSession[chID]
 	_, result := (*ts).Pc[plID]
 	return result
 }
 
 // ノンプレイヤーキャラクター登録有無チェック処理
 func CheckExistNPCharacter(chID string, plID string) bool {
-	ts, _ := trpgSession[chID]
+	ts := trpgSession[chID]
 	_, result := (*ts).Npc[plID]
 	return result
 }
@@ -107,22 +122,22 @@ func GetCharacterData(chID string, plID string, dataName string) string {
 	var result string = ""
 	ts, sesExist := trpgSession[chID]
 
-	if sesExist == true {
+	if sesExist {
 		cdGetFunc := GetCharacterDataGetFunc((*ts).Scenario.System, dataName)
 		if cdGetFunc != nil {
 			_, pcExist := (*ts).Pc[plID]
-			if pcExist == true {
+			if pcExist {
 				result = cdGetFunc((*ts).Pc[plID])
 			}
 		}
 	} else {
 		parentId := GetParentIDFromChildID(chID)
 		if parentId != "" {
-			tsParent, _ := trpgSession[parentId]
+			tsParent := trpgSession[parentId]
 			cdGetFunc := GetCharacterDataGetFunc((*tsParent).Scenario.System, dataName)
 			if cdGetFunc != nil {
 				_, npcExist := (*tsParent).Npc[plID]
-				if npcExist == true {
+				if npcExist {
 					result = cdGetFunc((*tsParent).Npc[plID])
 				}
 			}

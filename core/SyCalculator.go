@@ -65,7 +65,7 @@ func CalcStr2Ans(s string, system string) (result string, numOnlyFormula string,
 	err = nil
 	tokens := convStr2Tokens(s)
 	isError, errorCol, errorMes, isContCmd := evalTokens(tokens)
-	if isError == true {
+	if isError {
 		err = errors.New("Syntax error [ " + strconv.Itoa(errorCol) + ", " + errorMes + " ]")
 	} else {
 		if isContCmd {
@@ -104,13 +104,13 @@ func convStr2Tokens(str string) (result []tokenT) {
 	/* 文字配列をトークン化 */
 	for _, t := range strArray {
 		tmpToken, isExist := tokensDict[t]
-		if isExist == false {
+		if !isExist {
 			numOrCmdRegp := regexp.MustCompile("^[0-9]+$")
 			isNum := numOrCmdRegp.MatchString(t)
 			if isNum {
-				tmpToken, _ = tokensDict["NUM"]
+				tmpToken = tokensDict["NUM"]
 			} else {
-				tmpToken, _ = tokensDict["CMD"]
+				tmpToken = tokensDict["CMD"]
 			}
 			tmpToken.token = t
 		}
@@ -178,7 +178,7 @@ func evalTokens(tknArray []tokenT) (result bool, errorCol int, errorMes string, 
 			result = true
 		}
 
-		if result == true {
+		if result {
 			errorCol = int(i)
 			errorMes = t.token
 			break
@@ -203,7 +203,7 @@ func convTokens2ShuntingYardTokens(tknArray []tokenT) (result []tokenT) {
 	var convedTokens []tokenT
 	var stk = stack.New()
 
-	escapeToken, _ := tokensDict["$$$"]
+	escapeToken := tokensDict["$$$"]
 	stk.Push(escapeToken)
 
 	tknArray = append(tknArray, escapeToken)
@@ -243,11 +243,7 @@ func convDiceTokens2NumTokens(tknArray []tokenT, system string) (result []tokenT
 	for i, t := range tknArray {
 		if t.tokentype == COMMAND {
 			rollResult, err = ExecuteDiceRoll(GetConfig().EndPoint, system, t.token)
-			var sum int = 0
-			for _, d := range rollResult.Dices {
-				sum += int(d.Value)
-			}
-			result[i].token = strconv.Itoa(sum)
+			result[i].token = CalcDicesSum(rollResult.Dices)
 			result[i].tokentype = NUMBER
 		}
 	}
@@ -277,7 +273,7 @@ func calFromTokens(tknArray []tokenT) (result string, err error) {
 				stk.Push(end * first)
 			case "/":
 				if first == 0 {
-					err = errors.New("Divide zero")
+					err = errors.New("divide zero")
 					break
 				} else {
 					stk.Push(end / first)

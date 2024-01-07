@@ -20,3 +20,4 @@ session_data
 MyDebugConfig\.json
 .vscode/settings.json
 Makefile
+gocallvis.sh

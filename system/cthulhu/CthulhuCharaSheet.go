@@ -2,6 +2,7 @@ package cthulhu
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 )
@@ -38,6 +39,12 @@ func GetCharSheetFromURL(url string) (*CharaSheet, error) {
 	err = json.NewDecoder(resp.Body).Decode(&cs)
 	if err != nil {
 		return nil, err
+	}
+
+	/* JSONフォーマットが即しているか確認 */
+	if cs.SanMax == "" {
+		mes := "invalid format"
+		return nil, errors.New(mes)
 	}
 
 	return &cs, err
@@ -129,22 +136,16 @@ func GetCharDataFromCharSheet(cs *CharaSheet, plName string, plID string) *Chara
 			switch name {
 			case "運転":
 				us.Sub = (*cs).SkillActDriveType
-				break
 			case "製作":
 				us.Sub = (*cs).SkillActMakeType
-				break
 			case "操縦":
 				us.Sub = (*cs).SkillActOpeType
-				break
 			case "母国語":
 				us.Sub = (*cs).SkillNegMylang
-				break
 			case "芸術":
 				us.Sub = (*cs).SkillKnowArtType
-				break
 			default:
 				us.Sub = ""
-				break
 			}
 			us.Name = name
 			us.Init, _ = strconv.Atoi((*csSkillPointerList[asi][0])[uni])
