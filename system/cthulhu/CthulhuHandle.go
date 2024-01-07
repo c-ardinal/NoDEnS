@@ -393,19 +393,9 @@ func jobLinkRoll(cs *core.Session, md core.MessageData) (handlerResult core.Hand
 			} else {
 				diceCmd := "CCB<=" + command
 				exRegex := regexp.MustCompile(`[^\+\-\*\/ 　]+`)
-				diceRegex := regexp.MustCompile("^([0-9]+d)?[0-9]+$")
+				diceRegex := regexp.MustCompile("^([0-9]*d)?[0-9]+$")
 				for _, ex := range exRegex.FindAllString(command, -1) {
-					if diceRegex.MatchString(ex) {
-						if strings.Contains(ex, "d") {
-							rollResult, err = core.ExecuteDiceRoll(core.GetConfig().EndPoint, (*cs).Scenario.System, ex)
-							if err != nil {
-								returnMes = "server internal error"
-								handlerResult.Error = err
-							}
-							sum := core.CalcDicesSum(rollResult.Dices)
-							diceCmd = strings.Replace(diceCmd, ex, sum, -1)
-						}
-					} else {
+					if !diceRegex.MatchString(ex) {
 						exNum := GetSkillNum(chara, ex, "now")
 						if exNum == "-1" {
 							returnMes = "skill not found"
