@@ -56,7 +56,7 @@ func main() {
 
 	// スラッシュコマンドハンドラ登録
 	for _, handle := range config.GetSlashCmdHandleFuncTable() {
-		core.AddSlashCmdHandler(handle.System, handle.Command, handle.Function)
+		discordDriver.AddSlashCmdHandler(handle.System, handle.Command, handle.Function)
 		discordDriver.AddSlashCmdData(handle.System, handle.SlashCommandData)
 	}
 
