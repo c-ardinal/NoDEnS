@@ -1,9 +1,9 @@
 module Nodens
 
-go 1.19
+go 1.21
 
 require (
-	github.com/bwmarrin/discordgo v0.26.1
+	github.com/bwmarrin/discordgo v0.26.3
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 )
 

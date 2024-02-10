@@ -32,12 +32,12 @@ func ExecuteVersionCheck(endpoint string) (vr BCDiceVersionResult, err error) {
 	resp, err := http.Get(urlStr)
 	log.Printf("[Event]: BCDice-API call > %s", urlStr)
 	if err != nil {
-		log.Printf("[Error]: %v", err)
+		log.Printf("[Warning]: %v", err)
 		return vr, err
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&vr); err != nil {
-		log.Printf("[Error]: %v", err)
+		log.Printf("[Warning]: %v", err)
 		return vr, err
 	}
 	return vr, nil
@@ -49,12 +49,12 @@ func ExecuteGetSystems(endpoint string) (sr BCDiceSystemsResult, err error) {
 	resp, err := http.Get(urlStr)
 	log.Printf("[Event]: BCDice-API call > %s", urlStr)
 	if err != nil {
-		log.Printf("[Error]: %v", err)
+		log.Printf("[Warning]: %v", err)
 		return sr, err
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
-		log.Printf("[Error]: %v", err)
+		log.Printf("[Warning]: %v", err)
 		return sr, err
 	}
 	return sr, nil
@@ -146,12 +146,12 @@ func ExecuteDiceRoll(endpoint string, system string, dice string) (rr BCDiceRoll
 	resp, err := http.Get(urlStr)
 	log.Printf("[Event]: BCDice-API call > %s", urlStr)
 	if err != nil {
-		log.Printf("[Error]: %v", err)
+		log.Printf("[Warning]: %v", err)
 		return rr, err
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&rr); err != nil {
-		log.Printf("[Error]: %v", err)
+		log.Printf("[Warning]: %v", err)
 		return rr, err
 	}
 	log.Printf("[Event]: Dice roll result > '%v'", rr)
