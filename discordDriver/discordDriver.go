@@ -97,7 +97,10 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 		if handlerResult.Normal.EnableType == core.EnContent {
 			if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
 				handlerResult.Normal.Content = characterName + handlerResult.Normal.Content
-				session.ChannelMessageSendReply(md.ChannelID, handlerResult.Normal.Content, &ref)
+				_, err := session.ChannelMessageSendReply(md.ChannelID, handlerResult.Normal.Content, &ref)
+				if err != nil {
+					log.Printf("[Warning]: Send failed. %v", err.Error())
+				}
 			}
 		} else if handlerResult.Normal.EnableType == core.EnEmbed {
 			embedAuthor := &discordgo.MessageEmbedAuthor{
@@ -105,7 +108,10 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 				URL:  cSheetUrl,
 			}
 			handlerResult.Normal.Embed.Author = embedAuthor
-			session.ChannelMessageSendEmbedReply(md.ChannelID, handlerResult.Normal.Embed, &ref)
+			_, err := session.ChannelMessageSendEmbedReply(md.ChannelID, handlerResult.Normal.Embed, &ref)
+			if err != nil {
+				log.Printf("[Warning]: Send failed. %v", err.Error())
+			}
 		}
 
 		/* シークレットメッセージの送信 */
@@ -113,14 +119,20 @@ func OnMessageCreate(session *discordgo.Session, message *discordgo.MessageCreat
 			if handlerResult.Secret.EnableType == core.EnContent {
 				if handlerResult.Secret.Content != "" {
 					handlerResult.Secret.Content = "<@" + md.AuthorID + ">" + handlerResult.Secret.Content
-					session.ChannelMessageSend(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Content)
+					_, err := session.ChannelMessageSend(core.GetParentIDFromChildID(md.ChannelID), handlerResult.Secret.Content)
+					if err != nil {
+						log.Printf("[Warning]: Send failed. %v", err.Error())
+					}
 				}
 			} else if handlerResult.Secret.EnableType == core.EnEmbed {
 				messageSend := &discordgo.MessageSend{
 					Content: "<@" + md.AuthorID + ">",
 					Embed:   handlerResult.Secret.Embed,
 				}
-				session.ChannelMessageSendComplex(core.GetParentIDFromChildID(md.ChannelID), messageSend)
+				_, err := session.ChannelMessageSendComplex(core.GetParentIDFromChildID(md.ChannelID), messageSend)
+				if err != nil {
+					log.Printf("[Warning]: Send failed. %v", err.Error())
+				}
 			}
 		}
 	}
@@ -151,7 +163,7 @@ func jobInteractionButton(session *discordgo.Session, interaction *discordgo.Int
 				URL:  cSheetUrl,
 			}
 			// 応答
-			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+			err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Content: "<@" + interaction.Member.User.ID + ">",
@@ -165,6 +177,9 @@ func jobInteractionButton(session *discordgo.Session, interaction *discordgo.Int
 					},
 				},
 			})
+			if err != nil {
+				log.Printf("[Warning]: Send failed. %v", err.Error())
+			}
 		}
 	default:
 		/* Non process */
@@ -228,6 +243,9 @@ func jobInteractionMessage(session *discordgo.Session, interaction *discordgo.In
 						CustomID: "is-secret-open",
 						Label:    "結果を公開する",
 						Style:    discordgo.PrimaryButton,
+						Emoji: discordgo.ComponentEmoji{
+							Name: "👀",
+						},
 					},
 				},
 			},
@@ -239,7 +257,7 @@ func jobInteractionMessage(session *discordgo.Session, interaction *discordgo.In
 	if handlerResult.Normal.EnableType == core.EnContent {
 		if handlerResult.Normal.Content != "" && handlerResult.Normal.Content != md.MessageString {
 			handlerResult.Normal.Content = characterName + handlerResult.Normal.Content
-			session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+			err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Flags:      flags,
@@ -247,6 +265,9 @@ func jobInteractionMessage(session *discordgo.Session, interaction *discordgo.In
 					Components: components,
 				},
 			})
+			if err != nil {
+				log.Printf("[Warning]: Send failed. %v", err.Error())
+			}
 		}
 	} else if handlerResult.Normal.EnableType == core.EnEmbed {
 		embedAuthor := &discordgo.MessageEmbedAuthor{
@@ -254,7 +275,7 @@ func jobInteractionMessage(session *discordgo.Session, interaction *discordgo.In
 			URL:  cSheetUrl,
 		}
 		handlerResult.Normal.Embed.Author = embedAuthor
-		session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
+		err := session.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Flags:      flags,
@@ -262,21 +283,29 @@ func jobInteractionMessage(session *discordgo.Session, interaction *discordgo.In
 				Components: components,
 			},
 		})
+		if err != nil {
+			log.Printf("[Warning]: Send failed. %v", err.Error())
+		}
 	}
-
 	/* シークレットメッセージの送信 */
 	if handlerResult.Error == nil {
 		if handlerResult.Secret.EnableType == core.EnContent {
 			if handlerResult.Secret.Content != "" {
 				handlerResult.Secret.Content = "<@" + md.AuthorID + ">" + handlerResult.Secret.Content
-				session.ChannelMessageSend(md.ChannelID, handlerResult.Secret.Content)
+				_, err := session.ChannelMessageSend(md.ChannelID, handlerResult.Secret.Content)
+				if err != nil {
+					log.Printf("[Warning]: Send failed. %v", err.Error())
+				}
 			}
 		} else if handlerResult.Secret.EnableType == core.EnEmbed {
 			messageSend := &discordgo.MessageSend{
 				Content: "<@" + md.AuthorID + ">",
 				Embed:   handlerResult.Secret.Embed,
 			}
-			session.ChannelMessageSendComplex(md.ChannelID, messageSend)
+			_, err := session.ChannelMessageSendComplex(md.ChannelID, messageSend)
+			if err != nil {
+				log.Printf("[Warning]: Send failed. %v", err.Error())
+			}
 		}
 	}
 }
