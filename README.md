@@ -14,9 +14,9 @@ BCDiceがサポートしているシステムであれば利用可能です。
 
 ## 実行に必要なもの
 
-- Go (v1.19.4)
+- Go (v1.21.5)
 - Ruby (v3.1)
-- [ysakasin/bcdice-api](https://github.com/ysakasin/bcdice-api/tree/0.9.0) (v2.1.1)
+- [ysakasin/bcdice-api](https://github.com/ysakasin/bcdice-api/tree/2.1.1) (v2.1.1)
 - [DiscordBotのTokenとID](https://qiita.com/oosawa/items/e5b01e88a209d9087432)
 
 ※bcdice-apiはAPIバージョンv2を使用します(v1は非サポート)。
